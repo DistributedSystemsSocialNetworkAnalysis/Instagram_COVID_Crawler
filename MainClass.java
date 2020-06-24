@@ -32,7 +32,7 @@ public class MainClass {
         String regex="\\\\{1,2}(?!\\\\)";
       
         BrowserMobProxy proxy = new BrowserMobProxyServer();
-        proxy.start(6000);
+        proxy.start(0);
         
         /* crea un selenium proxy prendendo come argomento un browser mob proxy  */
         Proxy seleniumProxy = ClientUtil.createSeleniumProxy(proxy);
@@ -75,12 +75,10 @@ public class MainClass {
         firefoxOptions.setCapability(CapabilityType.PROXY, seleniumProxy);
         firefoxOptions.setCapability("acceptInsecureCerts", true);
         firefoxOptions.setCapability("acceptSslCerts", true);
-        
-        
+      
         /* creo un FirefoxDriver */
-		WebDriver driver = new FirefoxDriver(firefoxOptions);
- 
-        
+	WebDriver driver = new FirefoxDriver(firefoxOptions);
+      
         driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
         driver.manage().window().maximize();
 
@@ -101,11 +99,8 @@ public class MainClass {
         		
         		Instagram.downloadData(hashtags[i]);
         		
-        		Thread.sleep(searchTime);
-        		      		
+        		Thread.sleep(searchTime); 		      		
         	}
-        	
-
         } catch(Exception e) {
         	e.printStackTrace();
         }
@@ -113,95 +108,6 @@ public class MainClass {
     
 }
 
-    /*
-    
-    @SuppressWarnings("deprecation")
-	private static JsonNode getUserInformation(String name, BrowserMobProxy proxy, ConcurrentHashMap<String, List<JsonNode>> listenedResponse) throws InterruptedException, IOException {
-        System.out.println("Getting advanced of: " + name);
-        JsonNode finalJson = instagram.getProfileAdvancedJson(name);
-
-        proxy.newHar("profile " + name);
-        instagram.openProfile(name);
-        Thread.sleep(3000);
-
-        Har har = proxy.getHar();
-        JsonNode rootNode = proxyUtils.getJsonFromHar(har);
-
-        JsonNode entriesNode = rootNode.path("log").get("entries");
-
-        /* se l'account non è privato 
-        if(!finalJson.get("is_private").asBoolean()) {
-            //Aggiungo storie in evidenza
-            System.out.println("Getting highlight of: " + name);
-            for (JsonNode node : entriesNode) {
-                ObjectMapper mapper = new ObjectMapper();
-                if (Pattern.compile(".*" + endpoint.highlightMedia + ".*").matcher(node.path("request").get("url").asText()).matches()) {
-                    JsonNode userNode = node.path("response").path("content")
-                            .get("text");
-                    JsonNode info = mapper.readTree(userNode.asText());
-                    ((ObjectNode) finalJson).put("edge_highlight_reel", info.path("data").get("user").get("edge_highlight_reels"));
-                    break;
-                }
-            }
-
-
-            if (finalJson.path("edge_followed_by").get("count").asInt() < 2000) {
-                System.out.println("Getting followers of: " + name);
-                try {
-                    JsonNode info = instagram.getAllFollowers(listenedResponse);
-                    ((ObjectNode) (finalJson.get("edge_followed_by"))).put("edges", info);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-
-
-            if (finalJson.path("edge_follow").get("count").asInt() < 2000) {
-                instagram.openProfile(name);
-                System.out.println("Getting following of: " + name);
-                try {
-                    JsonNode info = instagram.getAllFollowing(listenedResponse);
-                    ((ObjectNode) (finalJson.get("edge_follow"))).put("edges", info);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
-            }
-
-            //prtendo hashtag
-            instagram.openProfile(name);
-            System.out.println("Getting followed hashtag of: " + name);
-            try {
-                JsonNode info = instagram.getAllFollowedHashtag(listenedResponse);
-                ((ObjectNode) finalJson).put("edge_following_hashtag", info);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-            System.out.println("Getting advanced media of: " + name);
-
-            for (JsonNode node : finalJson.path("edge_owner_to_timeline_media").get("edges")) {
-
-                String shortCode = node.path("node").get("shortcode").asText();
-                Thread.sleep((int) (Math.random() * 3000));
-                ((ObjectNode) node).put("advanced", instagram.getMediaAdvancedJson(shortCode));
-                //((ArrayNode)finalJson.path("edge_owner_to_timeline_media").path("edges")).add(media);
-
-                //System.out.println(node.toPrettyString());
-            }
-
-            System.out.println("Getting tagged media");
-            instagram.openProfile(name);
-            
-            //TODO entrare e prendere l'advanced dei media taggati
-            ((ObjectNode) finalJson).put("edge_user_to_photos_of_you", instagram.getTaggedPost(listenedResponse));
-            System.out.println("Got tagged media");
-            //System.out.println(finalJson.toPrettyString());
-        }
-        
-        return finalJson;
-    }
-    */
     
 
 
