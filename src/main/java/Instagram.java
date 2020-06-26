@@ -33,8 +33,7 @@ public class Instagram {
     	
     	/* reperisco la pagina del login e la carico */
         driver.get(Endpoint.LOGIN_URL);
-        
-    	
+            	
         /* inserisco username e password */
         driver.findElement(By.xpath(Xpaths.login_input_username)).sendKeys(user);
         driver.findElement(By.xpath(Xpaths.login_input_password)).sendKeys(passw);
@@ -45,9 +44,7 @@ public class Instagram {
         /* disattivo notifiche (appare subito una finestra che lo chiede) */
         dismissLoginNotification();
         
-        System.out.println("Logged.");
-        
-        
+        System.out.println("Logged.");      
     }
 
     
@@ -67,17 +64,6 @@ public class Instagram {
     	driver.findElement(By.xpath(Xpaths.input_search_bar)).sendKeys(hashtag);
     	driver.findElement(By.xpath("/html/body/div[1]/section/nav/div[2]/div/div/div[2]/div[2]/div[2]/div/a[1]/div/div/div[2]/span/span")).click(); // clicco invio
     	driver.findElement(By.xpath(Xpaths.warning_search_btn)).click();
-    	
-    	/*
-    	ObjectMapper mapper = new ObjectMapper();
-    	
-    	URL url  = new URL(driver.getCurrentUrl());
-    	System.out.println(url);
-    	
-    	
-    	JsonNode node = mapper.readTree(url.openStream());
-    	
-    	System.out.println(node); */
     }
     
     
@@ -107,10 +93,12 @@ public class Instagram {
     }
     
     /* scarica i post associati alla ricerca di "hashtag" e li salva in un file */
-//    TODO: non li salva!
     public static void downloadData(String hashtag) throws IOException {
+    	int colonna, riga;
 		File f = new File("./" + hashtag + "_data.txt");
 		FileWriter fw = new FileWriter(f);
+		int searchTime = 18000000; // 30 minuti
+
 		
 		if(!f.exists()) {
 			try {
@@ -119,6 +107,37 @@ public class Instagram {
 				e.printStackTrace();
 			}
 		}
+		
+		riga=1;
+		while(riga!=4) {
+			colonna=1;	
+			while(colonna!=4) {
+				String temp = "html/body/div[1]/section/main/article/div[1]/div/div/div[" + riga + "]/div[" + colonna + "]/a/div/div[2]";
+				System.out.println(temp);
+	    		String ref = driver.findElement(By.xpath("/html/body/div[1]/section/main/article/div[1]/div/div/div[" + riga + "]/div[" + colonna + "]/a")).getAttribute("href");
+		    	System.out.println(ref);
+	    		String jsonString = ref + "?__a=1";
+	    		System.out.println("link: " + jsonString);
+	    		driver.get(jsonString);
+	    		
+	    		ObjectMapper mapper = new ObjectMapper();
+				JsonNode actualObj=null; 
+				try { 
+					actualObj = mapper.readTree(jsonString);
+				}
+				catch (JsonProcessingException e) { 
+					e.printStackTrace(); 					
+				}
+
+
+	            
+	    		
+	    		colonna++;
+			}
+			
+			riga++;	
+		}
+		
 		
 		
 		
