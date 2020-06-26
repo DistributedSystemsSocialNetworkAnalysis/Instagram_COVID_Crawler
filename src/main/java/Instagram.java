@@ -95,11 +95,9 @@ public class Instagram {
     /* scarica i post associati alla ricerca di "hashtag" e li salva in un file */
     public static void downloadData(String hashtag) throws IOException {
     	int colonna, riga;
-		File f = new File("./" + hashtag + "_data.txt");
+		File f = new File("./" + hashtag + "_hashtag_data.txt");
 		FileWriter fw = new FileWriter(f);
-		int searchTime = 18000000; // 30 minuti
-
-		
+	
 		if(!f.exists()) {
 			try {
 				f.createNewFile();
@@ -108,34 +106,41 @@ public class Instagram {
 			}
 		}
 		
-		riga=1;
-		while(riga!=4) {
-			colonna=1;	
-			while(colonna!=4) {
-				String temp = "html/body/div[1]/section/main/article/div[1]/div/div/div[" + riga + "]/div[" + colonna + "]/a/div/div[2]";
-				System.out.println(temp);
-	    		String ref = driver.findElement(By.xpath("/html/body/div[1]/section/main/article/div[1]/div/div/div[" + riga + "]/div[" + colonna + "]/a")).getAttribute("href");
-		    	System.out.println(ref);
-	    		String jsonString = ref + "?__a=1";
-	    		System.out.println("link: " + jsonString);
-	    		driver.get(jsonString);
-	    		
-	    		ObjectMapper mapper = new ObjectMapper();
-				JsonNode actualObj=null; 
-				try { 
-					actualObj = mapper.readTree(jsonString);
+		Thread timer = new Thread(new TimeOut());
+		timer.start();
+		
+		/* finché non scade il timer per la ricerca e il download dei dati correlati all'hashtag */
+		while(timer.isAlive()) {
+			riga=1;
+			while(riga!=4) {
+				colonna=1;	
+				while(colonna!=4) {
+					String temp = "html/body/div[1]/section/main/article/div[1]/div/div/div[" + riga + "]/div[" + colonna + "]/a/div/div[2]";
+					System.out.println(temp);
+		    		String ref = driver.findElement(By.xpath("/html/body/div[1]/section/main/article/div[1]/div/div/div[" + riga + "]/div[" + colonna + "]/a")).getAttribute("href");
+			    	System.out.println(ref);
+		    		String jsonString = ref + "?__a=1";
+		    		System.out.println("link: " + jsonString);
+		    		driver.get(jsonString);
+		    		
+		    		ObjectMapper mapper = new ObjectMapper();
+					JsonNode actualObj=null; 
+					try { 
+						actualObj = mapper.readTree(jsonString);
+					}
+					catch (JsonProcessingException e) { 
+						e.printStackTrace(); 					
+					}
+	
+	
+		            
+		    		
+		    		colonna++;
 				}
-				catch (JsonProcessingException e) { 
-					e.printStackTrace(); 					
-				}
-
-
-	            
-	    		
-	    		colonna++;
+				
+				riga++;	
 			}
-			
-			riga++;	
+		
 		}
 		
 		
