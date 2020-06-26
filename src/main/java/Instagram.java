@@ -49,7 +49,7 @@ public class Instagram {
         WebElement button = new WebDriverWait(driver, 10).until(driver -> driver.findElement(By.xpath(Xpaths.dismiss_notification_btn)));
         button.click();
     }
-    
+     
     
     /* cerca un hashtag su instagram */
     public static void searchHashtag(String hashtag) throws IOException {
