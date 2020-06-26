@@ -118,7 +118,7 @@ public class Instagram {
 		    		Instagram.writeData(f,post);
 	
 		    		colonna++;
-				}
+				} 
 				
 				riga++;	
 			}
