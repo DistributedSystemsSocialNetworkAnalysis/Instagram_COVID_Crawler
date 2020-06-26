@@ -107,7 +107,7 @@ public class Instagram {
 		}
 		
 		Thread timer = new Thread(new TimeOut());
-		timer.start();
+		timer.start();   
 		
 		/* finché non scade il timer per la ricerca e il download dei dati correlati all'hashtag */
 		while(timer.isAlive()) {
