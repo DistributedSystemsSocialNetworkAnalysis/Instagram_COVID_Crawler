@@ -184,7 +184,7 @@ public class Instagram {
         /* restituisce l'oggetto JSON associato a "user" nell'oggetto JSON che rappresenta l'intero profilo */
         return actualObj.path("graphql").get("user");
     }
-
+ 
     
     public static JsonNode getMediaAdvancedJson(String mediaShortID){
         //todo prendere qualche like (100)?
