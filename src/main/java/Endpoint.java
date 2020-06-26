@@ -7,7 +7,6 @@ public class Endpoint {
     public static String USER_MEDIAS = "17880160963012870";
     public static String USER_STORIES = "17890626976041463";
     public static String STORIES = "17873473675158481";
-
     public static String followerQueryHash="c76146de99bb02f6415203be841dd25a";
     public static String followingQueryHash="d04b0a864b4b54837c0d870b0e77e076";
     public static String hashtagQueryHash="e6306cc3dbe69d6a82ef8b5f8654c50b";

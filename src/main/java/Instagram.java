@@ -4,19 +4,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.openqa.selenium.*;
 import org.openqa.selenium.support.ui.WebDriverWait;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
+import java.io.*;
+import java.net.*;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Instagram {
@@ -93,48 +89,34 @@ public class Instagram {
     }
     
     /* scarica i post associati alla ricerca di "hashtag" e li salva in un file */
-    public static void downloadData(String hashtag) throws IOException {
+    public static void downloadData(String hashtag) throws IOException, ParseException {
     	int colonna, riga;
 		File f = new File("./" + hashtag + "_hashtag_data.txt");
-		FileWriter fw = new FileWriter(f);
 	
-		if(!f.exists()) {
-			try {
-				f.createNewFile();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
+		if(!f.exists())
+			f.createNewFile();
 		
 		Thread timer = new Thread(new TimeOut());
 		timer.start();    
 		
+		System.out.println("Post from hashtag: " + hashtag);
 		/* finché non scade il timer per la ricerca e il download dei dati correlati all'hashtag */
 		while(timer.isAlive()) {
 			riga=1;
 			while(riga!=4) {
 				colonna=1;	
 				while(colonna!=4) {
+					Instagram.scrollFollow();
 					String temp = "html/body/div[1]/section/main/article/div[1]/div/div/div[" + riga + "]/div[" + colonna + "]/a/div/div[2]";
-					System.out.println(temp);
 		    		String ref = driver.findElement(By.xpath("/html/body/div[1]/section/main/article/div[1]/div/div/div[" + riga + "]/div[" + colonna + "]/a")).getAttribute("href");
-			    	System.out.println(ref);
-		    		String jsonString = ref + "?__a=1";
-		    		System.out.println("link: " + jsonString);
-		    		driver.get(jsonString);
+		    		// "/html/body/div[1]/section/main/article/div[1]/div/div/div[" + riga + "]/div[" + colonna + "]/a"
+		    		String jsonUrl = ref + "?__a=1";
+		    		//driver.get(jsonUrl);
 		    		
-		    		ObjectMapper mapper = new ObjectMapper();
-					JsonNode actualObj=null; 
-					try { 
-						actualObj = mapper.readTree(jsonString);
-					}
-					catch (JsonProcessingException e) { 
-						e.printStackTrace(); 					
-					}
-	
-	
-		            
 		    		
+		    		JSONObject post = Instagram.getPostJson(jsonUrl);
+		    		Instagram.writeData(f,post);
+	
 		    		colonna++;
 				}
 				
@@ -149,6 +131,31 @@ public class Instagram {
 		
 	}
     
+    /* scrive l'oggetto JSON corrispondente a un post sul file */
+    private static void writeData(File f, JSONObject post) throws IOException {
+		FileWriter fw = new FileWriter(f,true);
+		
+		fw.write(post.toJSONString());
+		System.out.println(post.toJSONString());
+		fw.close();
+	}
+
+
+	/* estraggo i dati utili in JSON */
+    public static JSONObject getPostJson(String jsonUrl) throws IOException, MalformedURLException, ParseException {
+    	URL url = new URL(jsonUrl);	
+		URLConnection conn = url.openConnection();
+		conn.connect();
+			
+		BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));		
+		String jsonString = br.readLine();
+		
+		JSONParser parser = new JSONParser();		
+		JSONObject post = (JSONObject) parser.parse(jsonString);
+	
+		
+		return post;
+    }
   
     
     /*  funzione che apre il profilo di un utente */
