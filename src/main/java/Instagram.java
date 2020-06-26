@@ -112,7 +112,7 @@ public class Instagram {
 		    		// "/html/body/div[1]/section/main/article/div[1]/div/div/div[" + riga + "]/div[" + colonna + "]/a"
 		    		String jsonUrl = ref + "?__a=1";
 		    		//driver.get(jsonUrl);
-		    		
+		    	 	
 		    		
 		    		JSONObject post = Instagram.getPostJson(jsonUrl);
 		    		Instagram.writeData(f,post);

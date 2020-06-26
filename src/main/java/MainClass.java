@@ -62,7 +62,7 @@ public class MainClass {
         	for(int i=0; i<hashtags.length; i++) {
         		Instagram.searchHashtag(hashtags[i]);
          		
-        		Instagram.downloadData(hashtags[i]);		      		
+        		Instagram.downloadData(hashtags[i]);		       		
         	}
         } catch(Exception e) {
         	e.printStackTrace();
