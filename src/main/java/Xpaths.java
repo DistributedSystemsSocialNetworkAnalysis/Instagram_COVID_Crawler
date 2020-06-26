@@ -15,3 +15,4 @@ public class Xpaths {
     public static String following="//*[@id=\"react-root\"]/section/main/div/header/section/ul/li[3]/a";
     public static String taggedPost="//a[contains(@href,'tagged')]";
 }
+ 

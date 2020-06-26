@@ -37,7 +37,7 @@ public class ProxyUtils {
                 return response;
             }
             return null;
-        });
+        }); 
     }
 
     public static void interceptFollower(String url, BrowserMobProxy proxy, ConcurrentHashMap<String, List<JsonNode>> listenedResponse){

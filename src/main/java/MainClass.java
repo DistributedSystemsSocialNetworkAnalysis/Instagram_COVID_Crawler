@@ -26,7 +26,7 @@ public class MainClass {
 		} catch (IOException e1) {
 			System.out.println("Errore nel reperimento degli hashtags.");
 			e1.printStackTrace();
-		}
+		} 
              
         /* setto il driver */
         System.setProperty("webdriver.gecko.driver", "./geckodriver");

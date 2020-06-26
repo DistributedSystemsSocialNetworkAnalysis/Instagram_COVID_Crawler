@@ -10,7 +10,7 @@ public class ServerAPI {
     public static boolean sendIgJson(String id, JsonNode json, int type){
 
         String json_path=json.toString();
-        URL url = null;
+        URL url = null; 
         try {
             url = new URL("http://192.168.178.56/send_ig.php");
             URLConnection con = url.openConnection();

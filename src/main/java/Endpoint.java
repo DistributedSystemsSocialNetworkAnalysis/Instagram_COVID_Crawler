@@ -57,7 +57,7 @@ public class Endpoint {
     /* restituisce delle informazioni private di un account fornendo il corrispondente id */
     public static String get_account_json_private_info_link_by_account_id(String account_id){
         return String.format(ACCOUNT_JSON_PRIVATE_INFO_BY_ID, account_id);
-    }
+    } 
 
 
     public static String get_account_medias_json_link(Map<String, String> variables){
