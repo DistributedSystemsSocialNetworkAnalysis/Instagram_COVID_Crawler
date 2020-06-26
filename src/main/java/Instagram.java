@@ -138,7 +138,7 @@ public class Instagram {
 		fw.write(post.toJSONString());
 		System.out.println(post.toJSONString());
 		fw.close();
-	}
+	} 
 
 
 	/* estraggo i dati utili in JSON */
