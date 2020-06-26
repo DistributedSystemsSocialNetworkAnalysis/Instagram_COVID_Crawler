@@ -1,6 +1,6 @@
 
 public class TimeOut implements Runnable {
-	int searchTime = 18000000;
+	int searchTime = 18000000; // 30 minuti
 	
 	@Override
 	public void run() {
