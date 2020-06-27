@@ -4,8 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 import org.json.simple.JSONObject;
+import org.json.simple.JSONArray;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.openqa.selenium.*;
@@ -17,7 +20,10 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class Instagram {
     public static WebDriver driver;
+    public static JSONArray posts; 
+    public static int numOfPosts;
 
+    
     public static void setDriver(WebDriver _driver){
         driver=_driver;
     }
@@ -80,7 +86,6 @@ public class Instagram {
     	int i = 0;
 		String hashtag;
 		while((hashtag=br.readLine())!=null) {
-			System.out.println(hashtag);
 			hashtags[i]=hashtag;
 			i++;
 		}
@@ -88,10 +93,13 @@ public class Instagram {
 		return hashtags;
     }
     
+    
     /* scarica i post associati alla ricerca di "hashtag" e li salva in un file */
     public static void downloadData(String hashtag) throws IOException, ParseException {
     	int colonna, riga;
 		File f = new File("./" + hashtag + "_hashtag_data.txt");
+		posts = new JSONArray();
+		numOfPosts = 0;
 	
 		if(!f.exists())
 			f.createNewFile();
@@ -106,16 +114,15 @@ public class Instagram {
 			while(riga!=4) {
 				colonna=1;	
 				while(colonna!=4) {
-					Instagram.scrollFollow();
+					Instagram.scrollPosts();
 					String temp = "html/body/div[1]/section/main/article/div[1]/div/div/div[" + riga + "]/div[" + colonna + "]/a/div/div[2]";
 		    		String ref = driver.findElement(By.xpath("/html/body/div[1]/section/main/article/div[1]/div/div/div[" + riga + "]/div[" + colonna + "]/a")).getAttribute("href");
 		    		// "/html/body/div[1]/section/main/article/div[1]/div/div/div[" + riga + "]/div[" + colonna + "]/a"
 		    		String jsonUrl = ref + "?__a=1";
 		    		//driver.get(jsonUrl);
-		    	  	 
 		    		
-		    		JSONObject post = Instagram.getPostJson(jsonUrl);
-		    		Instagram.writeData(f,post);
+		    		JSONObject postFromUrl = Instagram.getPostJson(jsonUrl);
+		    		Instagram.addData(f,postFromUrl);
 	
 		    		colonna++;
 				} 
@@ -124,19 +131,46 @@ public class Instagram {
 			}
 		
 		}
-		
-		
-		
-		
-		
+			
 	}
     
-    /* scrive l'oggetto JSON corrispondente a un post sul file */
-    private static void writeData(File f, JSONObject post) throws IOException {
-		FileWriter fw = new FileWriter(f,true);
-		
-		fw.write(post.toJSONString());
-		System.out.println(post.toJSONString());
+    /* aggiunge il post al JSONArray che li raccoglie */
+    @SuppressWarnings("unchecked")
+	private static void addData(File f, JSONObject postFromUrl) throws IOException {
+    	/* creo un JSONObject in cui inserisco solamente le info che mi interessano */
+    	JSONObject post = new JSONObject();
+    	post.put("AccessibilityCaption", ((JSONObject)((JSONObject)((JSONObject)postFromUrl.get("graphql"))).get("shortcode_media")).get("accessibility_caption"));
+    	post.put("CaptionText",((JSONObject)((JSONObject)((JSONArray)((JSONObject)((JSONObject)((JSONObject)((JSONObject)postFromUrl.get("graphql"))).get("shortcode_media")).get("edge_media_to_caption")).get("edges")).get(0)).get("node")).get("text"));
+    	post.put("NumberOfLikes",((JSONObject)((JSONObject)((JSONObject)((JSONObject)postFromUrl.get("graphql"))).get("shortcode_media")).get("edge_media_preview_like")).get("count"));
+    	post.put("NumberOfComments",((JSONObject)((JSONObject)((JSONObject)((JSONObject)postFromUrl.get("graphql"))).get("shortcode_media")).get("edge_media_to_parent_comment")).get("count"));
+    	post.put("Timestamp",((JSONObject)((JSONObject)((JSONObject)postFromUrl.get("graphql"))).get("shortcode_media")).get("taken_at_timestamp"));
+    	Timestamp t = new Timestamp((long) ((JSONObject)((JSONObject)((JSONObject)postFromUrl.get("graphql"))).get("shortcode_media")).get("taken_at_timestamp"));
+    	Date date=new Date(t.getTime());
+    	post.put("LocalDate", "" + date);
+    	
+    	JSONObject location = (JSONObject) ((JSONObject)((JSONObject)((JSONObject)postFromUrl.get("graphql"))).get("shortcode_media")).get("location");
+    	if(location!=null && location.containsKey("name"))
+        	post.put("Location",((JSONObject)((JSONObject)((JSONObject)((JSONObject)postFromUrl.get("graphql"))).get("shortcode_media")).get("location")).get("name"));
+        else 
+        	post.put("Location",null);
+
+    	/* se localmente ho salvato già 100 post li scrivo su file e svuoto l'array */
+    	if(posts.size()==100) {
+    		writeData(f);
+    		posts.clear();
+    	}
+    	
+    	posts.add(post);
+    	numOfPosts++;
+    	
+    	System.out.println("Post " + numOfPosts + ":" + post.toJSONString());
+    }
+    
+    
+    /* scrivo il contenuto corrente del JSONArray posts (append) */
+	private static void writeData(File f) throws IOException {
+		FileWriter fw = new FileWriter(f,true);	
+		fw.write(posts.toJSONString()); // append
 		fw.close();
 	} 
 
@@ -152,9 +186,18 @@ public class Instagram {
 		
 		JSONParser parser = new JSONParser();		
 		JSONObject post = (JSONObject) parser.parse(jsonString);
-	
-		
+			
 		return post;
+    }
+    
+    
+    /* funzione di scrolling dei post di Instagram (ricerca hashtag) */
+    public static void scrollPosts() {
+    	try{
+        	JavascriptExecutor js = (JavascriptExecutor) driver;
+        	js.executeScript("document.getElementsByClassName('EZdmt')[0].scrollTo(0,document.getElementsByClassName('EZdmt')[0].scrollHeight)");
+        }
+        catch(Exception ignore){}
     }
   
     
@@ -166,11 +209,7 @@ public class Instagram {
     
     /* restituisce il profilo dell'utente "user" in formato JSON */
     public static JsonNode getProfileAdvancedJson(String user){
-        //remove
-        //edge_mutual_followed_by
-        //profile_pic_url
-
-        driver.get(Endpoint.get_account_json_link(user));
+    	driver.get(Endpoint.get_account_json_link(user));
         String jsonString=driver.findElement(By.tagName("pre")).getText();
         
         ObjectMapper mapper = new ObjectMapper();

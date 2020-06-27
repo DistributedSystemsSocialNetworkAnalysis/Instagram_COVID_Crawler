@@ -7,8 +7,6 @@ import org.openqa.selenium.remote.CapabilityType;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
-import com.fasterxml.jackson.core.*;
-
  
 
 public class MainClass {
