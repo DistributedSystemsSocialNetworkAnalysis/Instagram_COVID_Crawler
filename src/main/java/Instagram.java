@@ -17,6 +17,7 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 public class Instagram {
     public static WebDriver driver;
@@ -26,6 +27,7 @@ public class Instagram {
     
     public static void setDriver(WebDriver _driver){
         driver=_driver;
+        driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
     }
 
     
@@ -95,12 +97,14 @@ public class Instagram {
     
     
     /* scarica i post associati alla ricerca di "hashtag" e li salva in un file */
-    public static void downloadData(String hashtag) throws IOException, ParseException {
+    public static void downloadData(String hashtag) throws IOException, ParseException, InterruptedException {
     	int colonna, riga;
 		File f = new File("./" + hashtag + "_hashtag_data.txt");
 		posts = new JSONArray();
 		numOfPosts = 0;
 	
+		driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
+		
 		if(!f.exists())
 			f.createNewFile();
 		
@@ -109,14 +113,17 @@ public class Instagram {
 		
 		System.out.println("Post from hashtag: " + hashtag);
 		/* finché non scade il timer per la ricerca e il download dei dati correlati all'hashtag */
+		riga=1;
 		while(timer.isAlive()) {
-			riga=1;
-			while(riga!=4) {
+			while(true) {
 				colonna=1;	
+				Instagram.scrollPosts();
+				Thread.sleep(5000);
 				while(colonna!=4) {
-					Instagram.scrollPosts();
-					String temp = "html/body/div[1]/section/main/article/div[1]/div/div/div[" + riga + "]/div[" + colonna + "]/a/div/div[2]";
-		    		String ref = driver.findElement(By.xpath("/html/body/div[1]/section/main/article/div[1]/div/div/div[" + riga + "]/div[" + colonna + "]/a")).getAttribute("href");
+					
+					//String temp = "\"/html/body/div[1]/section/main/article/div[1]/div/div/div[" + riga + "]/div[" + colonna + "]/a";
+		    		String ref = driver.findElement(By.xpath("/html/body/div[1]/section/main/article/div[2]/div/div[" + riga + "]/div[" + colonna + "]/a")).getAttribute("href");
+		    		// /html/body/div[1]/section/main/article/div[2]/div/div[2]/div[1]/a
 		    		// "/html/body/div[1]/section/main/article/div[1]/div/div/div[" + riga + "]/div[" + colonna + "]/a"
 		    		String jsonUrl = ref + "?__a=1";
 		    		//driver.get(jsonUrl);
@@ -140,7 +147,11 @@ public class Instagram {
     	/* creo un JSONObject in cui inserisco solamente le info che mi interessano */
     	JSONObject post = new JSONObject();
     	post.put("AccessibilityCaption", ((JSONObject)((JSONObject)((JSONObject)postFromUrl.get("graphql"))).get("shortcode_media")).get("accessibility_caption"));
-    	post.put("CaptionText",((JSONObject)((JSONObject)((JSONArray)((JSONObject)((JSONObject)((JSONObject)((JSONObject)postFromUrl.get("graphql"))).get("shortcode_media")).get("edge_media_to_caption")).get("edges")).get(0)).get("node")).get("text"));
+    	JSONArray captionText = ((JSONArray)((JSONObject)((JSONObject)((JSONObject)((JSONObject)postFromUrl.get("graphql"))).get("shortcode_media")).get("edge_media_to_caption")).get("edges"));
+    	if(captionText!=null)
+    		post.put("CaptionText",((JSONObject)((JSONObject)((JSONArray)((JSONObject)((JSONObject)((JSONObject)((JSONObject)postFromUrl.get("graphql"))).get("shortcode_media")).get("edge_media_to_caption")).get("edges")).get(0)).get("node")).get("text"));
+    	else post.put("CaptionText",null);
+    		
     	post.put("NumberOfLikes",((JSONObject)((JSONObject)((JSONObject)((JSONObject)postFromUrl.get("graphql"))).get("shortcode_media")).get("edge_media_preview_like")).get("count"));
     	post.put("NumberOfComments",((JSONObject)((JSONObject)((JSONObject)((JSONObject)postFromUrl.get("graphql"))).get("shortcode_media")).get("edge_media_to_parent_comment")).get("count"));
     	post.put("Timestamp",((JSONObject)((JSONObject)((JSONObject)postFromUrl.get("graphql"))).get("shortcode_media")).get("taken_at_timestamp"));
@@ -195,7 +206,9 @@ public class Instagram {
     public static void scrollPosts() {
     	try{
         	JavascriptExecutor js = (JavascriptExecutor) driver;
-        	js.executeScript("document.getElementsByClassName('EZdmt')[0].scrollTo(0,document.getElementsByClassName('EZdmt')[0].scrollHeight)");
+        	//((JavascriptExecutor) driver).executeScript("window.scrollTo(0, document.body.scrollHeight)");
+        	//String script = "action.moveToElement(getElementByXpath(\"/html/body/div[1]/section/main/article/div[2]/div/div[" + numRiga + "]/div[1]/a\")).build().perform()";
+        	js.executeScript("window.scrollTo(0, document.body.scrollHeight)");
         }
         catch(Exception ignore){}
     }

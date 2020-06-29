@@ -10,7 +10,9 @@ import java.util.concurrent.TimeUnit;
  
 
 public class MainClass {
-    public static void main(String [ ] args){
+    public static void main(String [ ] args) {
+    	System.out.println("--- Instagram Crawler ---");
+    	
     	BrowserMobProxy proxy = new BrowserMobProxyServer();
         proxy.start(0);
         
