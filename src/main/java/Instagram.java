@@ -1,33 +1,30 @@
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import java.sql.Timestamp;
-import java.time.LocalDateTime;
-
 import org.json.simple.JSONObject;
 import org.json.simple.JSONArray;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
-import org.openqa.selenium.*;
+import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.NoSuchElementException;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.ui.ExpectedCondition;
+import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import java.io.*;
 import java.net.*;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class Instagram {
     public static WebDriver driver;
-    public static JSONArray posts; 
+    public static ArrayList <String> posts; 
     public static int numOfPosts;
 
     
     public static void setDriver(WebDriver _driver){
         driver=_driver;
-        driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
+        driver.manage().timeouts().implicitlyWait(40, TimeUnit.SECONDS);
     }
 
     
@@ -66,7 +63,7 @@ public class Instagram {
     		hashtag = "#" + hashtag;
     	
     	driver.findElement(By.xpath(Xpaths.input_search_bar)).sendKeys(hashtag);
-    	driver.findElement(By.xpath("/html/body/div[1]/section/nav/div[2]/div/div/div[2]/div[2]/div[2]/div/a[1]/div/div/div[2]/span/span")).click(); // clicco invio
+    	driver.findElement(By.xpath("/html/body/div[1]/section/nav/div[2]/div/div/div[2]/div[3]/div[2]/div/a[1]")).click(); // clicco invio
     	driver.findElement(By.xpath(Xpaths.warning_search_btn)).click();
     }
     
@@ -95,12 +92,11 @@ public class Instagram {
 		return hashtags;
     }
     
-    
     /* scarica i post associati alla ricerca di "hashtag" e li salva in un file */
     public static void downloadData(String hashtag) throws IOException, ParseException, InterruptedException {
     	int colonna, riga;
 		File f = new File("./" + hashtag + "_hashtag_data.txt");
-		posts = new JSONArray();
+		posts = new ArrayList<String>();
 		numOfPosts = 0;
 	
 		driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
@@ -112,40 +108,53 @@ public class Instagram {
 		timer.start();    
 		
 		System.out.println("Post from hashtag: " + hashtag);
+		
 		/* finché non scade il timer per la ricerca e il download dei dati correlati all'hashtag */
 		riga=1;
 		while(timer.isAlive()) {
 			while(true) {
 				colonna=1;	
-				Instagram.scrollPosts();
-				Thread.sleep(5000);
+				Instagram.loadPosts(driver);
+
+				System.out.println("---");
 				while(colonna!=4) {
-					
-					//String temp = "\"/html/body/div[1]/section/main/article/div[1]/div/div/div[" + riga + "]/div[" + colonna + "]/a";
-		    		String ref = driver.findElement(By.xpath("/html/body/div[1]/section/main/article/div[2]/div/div[" + riga + "]/div[" + colonna + "]/a")).getAttribute("href");
-		    		// /html/body/div[1]/section/main/article/div[2]/div/div[2]/div[1]/a
-		    		// "/html/body/div[1]/section/main/article/div[1]/div/div/div[" + riga + "]/div[" + colonna + "]/a"
-		    		String jsonUrl = ref + "?__a=1";
-		    		//driver.get(jsonUrl);
-		    		
-		    		JSONObject postFromUrl = Instagram.getPostJson(jsonUrl);
-		    		Instagram.addData(f,postFromUrl);
+					try {		
+						String elementPath = "/html/body/div[1]/section/main/article/div[2]/div/div[" + riga + "]/div[" + colonna + "]/a";
+			    		//WebElement el = new WebDriverWait(driver, 10).until(driver ->  driver.findElement(By.xpath(elementPath)));
+						WebDriverWait wait = new WebDriverWait(driver,40);
+						WebElement el = wait.until(ExpectedConditions.elementToBeClickable(By.xpath(elementPath)));
+						
+			    		String ref = el.getAttribute("href");
+			    		String jsonUrl = ref + "?__a=1";
+			    		
+			    		String postFromUrl = Instagram.getPostJson(jsonUrl);
+			    		
+			    		Instagram.addData(f,postFromUrl);
+					} catch(NoSuchElementException e) { }
+					catch(Exception e1) { }
 	
+					//Instagram.loadPosts(driver);
 		    		colonna++;
 				} 
 				
+				if(riga==10)
+					riga--;
 				riga++;	
 			}
 		
 		}
 			
 	}
+	
     
     /* aggiunge il post al JSONArray che li raccoglie */
-    @SuppressWarnings("unchecked")
-	private static void addData(File f, JSONObject postFromUrl) throws IOException {
+	private static void addData(File f, String postFromUrl) throws IOException {
     	/* creo un JSONObject in cui inserisco solamente le info che mi interessano */
-    	JSONObject post = new JSONObject();
+    	//JSONObject post = new JSONObject();
+    	
+    	// N.B: Il parsing si far� poi, raccolgo tutto il json del post
+    	
+    	/*
     	post.put("AccessibilityCaption", ((JSONObject)((JSONObject)((JSONObject)postFromUrl.get("graphql"))).get("shortcode_media")).get("accessibility_caption"));
     	JSONArray captionText = ((JSONArray)((JSONObject)((JSONObject)((JSONObject)((JSONObject)postFromUrl.get("graphql"))).get("shortcode_media")).get("edge_media_to_caption")).get("edges"));
     	if(captionText!=null)
@@ -164,41 +173,47 @@ public class Instagram {
         	post.put("Location",((JSONObject)((JSONObject)((JSONObject)((JSONObject)postFromUrl.get("graphql"))).get("shortcode_media")).get("location")).get("name"));
         else 
         	post.put("Location",null);
+        */
 
     	/* se localmente ho salvato già 100 post li scrivo su file e svuoto l'array */
-    	if(posts.size()==100) {
+    	if(posts.size()==10) {
     		writeData(f);
-    		posts.clear();
+    		posts = new ArrayList<String>();
     	}
     	
-    	posts.add(post);
+    	posts.add(postFromUrl);
     	numOfPosts++;
     	
-    	System.out.println("Post " + numOfPosts + ":" + post.toJSONString());
+    	System.out.println("Post " + numOfPosts + ":" + postFromUrl);
     }
     
     
     /* scrivo il contenuto corrente del JSONArray posts (append) */
 	private static void writeData(File f) throws IOException {
 		FileWriter fw = new FileWriter(f,true);	
-		fw.write(posts.toJSONString()); // append
+		for(String p: posts)
+			fw.write(p);
 		fw.close();
 	} 
 
 
 	/* estraggo i dati utili in JSON */
-    public static JSONObject getPostJson(String jsonUrl) throws IOException, MalformedURLException, ParseException {
+    public static String getPostJson(String jsonUrl) throws IOException, MalformedURLException, ParseException {
     	URL url = new URL(jsonUrl);	
-		URLConnection conn = url.openConnection();
+		HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+		conn.setConnectTimeout(0);
+		conn.setRequestMethod("GET");
+		conn.setDoOutput(false);
 		conn.connect();
 			
 		BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));		
 		String jsonString = br.readLine();
 		
+		/*
 		JSONParser parser = new JSONParser();		
 		JSONObject post = (JSONObject) parser.parse(jsonString);
-			
-		return post;
+		*/
+		return jsonString;
     }
     
     
@@ -206,187 +221,34 @@ public class Instagram {
     public static void scrollPosts() {
     	try{
         	JavascriptExecutor js = (JavascriptExecutor) driver;
-        	//((JavascriptExecutor) driver).executeScript("window.scrollTo(0, document.body.scrollHeight)");
-        	//String script = "action.moveToElement(getElementByXpath(\"/html/body/div[1]/section/main/article/div[2]/div/div[" + numRiga + "]/div[1]/a\")).build().perform()";
+        	js.executeScript("window.scrollTo(0, document.body.scrollHeight)");
+        	js.executeScript("window.scrollTo(0,-400)"); // a volte lo scrolling si blocca e per sbloccarlo basta tornare su e riscrollare
         	js.executeScript("window.scrollTo(0, document.body.scrollHeight)");
         }
         catch(Exception ignore){}
     }
-  
     
-    /*  funzione che apre il profilo di un utente */
-    public static void openProfile(String username){
-        driver.get(Endpoint.get_account_page_link(username));
-    }
-    
-    
-    /* restituisce il profilo dell'utente "user" in formato JSON */
-    public static JsonNode getProfileAdvancedJson(String user){
-    	driver.get(Endpoint.get_account_json_link(user));
-        String jsonString=driver.findElement(By.tagName("pre")).getText();
-        
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode actualObj=null;
-        try {
-            actualObj = mapper.readTree(jsonString);
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
+    private static Boolean loadPosts(WebDriver driver) throws InterruptedException {
+		long lastHeight = (long) ((JavascriptExecutor) driver).executeScript("return document.body.scrollHeight");
+		
+		((JavascriptExecutor) driver).executeScript("window.scrollTo(0, document.body.scrollHeight)");
+		
+		try {
+			long lH = lastHeight;
+			
+			new WebDriverWait(driver, 45).until(new ExpectedCondition<Boolean>() {
+		        public Boolean apply(WebDriver driver) {                
+		            return lH != (long) ((JavascriptExecutor) driver).executeScript("return document.body.scrollHeight");
+		        }
+			});
+		}catch(Exception e) { }
+		
+		long newHeight = (long) ((JavascriptExecutor) driver).executeScript("return document.body.scrollHeight");
+        if (newHeight == lastHeight) {
+        	return false;
         }
-        
-        /* restituisce l'oggetto JSON associato a "user" nell'oggetto JSON che rappresenta l'intero profilo */
-        return actualObj.path("graphql").get("user");
-    }
  
-    
-    public static JsonNode getMediaAdvancedJson(String mediaShortID){
-        //todo prendere qualche like (100)?
-        driver.get(Endpoint.get_media_json_link(mediaShortID));
-        
-        String jsonString=driver.findElement(By.tagName("pre")).getText();
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode actualObj=null;
-        try {
-            actualObj = mapper.readTree(jsonString);
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-        }
-        return actualObj.path("graphql").get("shortcode_media");
-    }
-
-    
-    public static void openFollowers(){
-        WebElement button = new WebDriverWait(driver, 10).until(driver -> driver.findElement(By.xpath(Xpaths.follower)));
-        button.click();
-    }
-
-    
-    public static JsonNode getAllFollowers(ConcurrentHashMap<String, List<JsonNode>> listenedResponse){
-        openFollowers();
-        
-        ArrayNode followers= JsonNodeFactory.instance.arrayNode();
-        while(!ProxyUtils.endedFollower){
-            try {
-                if(ProxyUtils.Limited){
-                    driver.navigate().refresh();
-                    listenedResponse.put("Follower", new ArrayList<>());
-                    Thread.sleep(3000);
-                    ProxyUtils.Limited=false;
-                    openFollowers();
-                }
-               Instagram.scrollFollow();
-                Thread.sleep((int)(Math.random()*3000));
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-        
-        ProxyUtils.endedFollower=false;
-        for(JsonNode node:listenedResponse.get("Follower")){
-            followers.addAll((ArrayNode) node.path("data").path("user").path("edge_followed_by").get("edges"));
-        }
-        listenedResponse.put("Follower", new ArrayList<>());
-
-        return followers;
-    }
-
-    
-    public static void scrollFollow() {
-        try{
-        	JavascriptExecutor js = (JavascriptExecutor) driver;
-        	js.executeScript("document.getElementsByClassName('"+Xpaths.followScrollDiv+"')[0].scrollTo(0,document.getElementsByClassName('"+Xpaths.followScrollDiv+"')[0].scrollHeight)");
-        }
-        catch(Exception ignore){}
-    }
-
-    
-    public static void openFollowing(){
-        WebElement button = new WebDriverWait(driver, 10).until(driver -> driver.findElement(By.xpath(Xpaths.following)));
-        button.click();
-    }
-
-    public static JsonNode getAllFollowing(ConcurrentHashMap<String, List<JsonNode>> listenedResponse){
-        openFollowing();
-        
-        ArrayNode followers= JsonNodeFactory.instance.arrayNode();
-        while(!ProxyUtils.endedFollowing){
-            try {
-                if(ProxyUtils.Limited){
-                    driver.navigate().refresh();
-                    listenedResponse.put("Following", new ArrayList<>());
-                    Thread.sleep(3000);
-                    ProxyUtils.Limited=false;
-                    openFollowing();
-                }
-                
-                Instagram.scrollFollow();
-                Thread.sleep((int)(Math.random()*3000));
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-        ProxyUtils.endedFollowing=false;
-        for(JsonNode node:listenedResponse.get("Following")){
-            followers.addAll((ArrayNode) node.path("data").path("user").path("edge_follow").get("edges"));
-        }
-        listenedResponse.put("Following", new ArrayList<>());
-        return followers;
-    }
-
-    
-    public static void scrollFollowing() {
-        try{
-            JavascriptExecutor js = (JavascriptExecutor) driver;
-            js.executeScript("document.getElementsByClassName('"+Xpaths.followScrollDiv+"')[0].scrollTo(0,document.getElementsByClassName('"+Xpaths.followScrollDiv+"')[0].scrollHeight)");
-        }
-        catch(Exception ignore){}
-    }
-
-    public static JsonNode getAllFollowedHashtag(ConcurrentHashMap<String, List<JsonNode>> listenedResponse){
-        openHashtag();
-        while(!ProxyUtils.endedHashtag){
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-        ProxyUtils.endedHashtag=false;
-        return listenedResponse.get("Hashtag").remove(0);
-    }
-
-    private static void openHashtag() {
-        openFollowing();
-        WebElement button = new WebDriverWait(driver, 10).until(driver -> driver.findElement(By.xpath(Xpaths.hashtagFollowedButton)));
-        button.click();
-    }
-
-    @SuppressWarnings("deprecation")
-	public static JsonNode getTaggedPost(ConcurrentHashMap<String, List<JsonNode>> listenedResponse){
-        ProxyUtils.interceptTagged=true;
-        openTaggedPost();
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        ArrayNode tagged=JsonNodeFactory.instance.arrayNode();
-        ProxyUtils.interceptTagged=false;
-        for (JsonNode n:listenedResponse.get("Tagged")){
-            tagged.addAll((ArrayNode)n);
-        }
-        //prendo advanced per ognuno
-        for(JsonNode media: tagged){
-            ((ObjectNode)media).put("advanced", getMediaAdvancedJson(media.path("node").get("shortcode").asText()));
-        }
-        listenedResponse.put("Tagged", new ArrayList<>());
-        return tagged;
-    }
-
-    private static void openTaggedPost(){
-        WebElement button = new WebDriverWait(driver, 10).until(driver -> driver.findElement(By.xpath(Xpaths.taggedPost)));
-        button.click();
-    }
-
-
+		return true;
+	}
 
 }

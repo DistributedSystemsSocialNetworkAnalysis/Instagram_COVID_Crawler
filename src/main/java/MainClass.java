@@ -31,7 +31,7 @@ public class MainClass {
 		} 
              
         /* setto il driver */
-        System.setProperty("webdriver.gecko.driver", "./geckodriver");
+        System.setProperty("webdriver.gecko.driver", "./geckodriver.exe");
         
         /* setto le sue opzioni */
         FirefoxOptions firefoxOptions = new FirefoxOptions();
@@ -51,7 +51,6 @@ public class MainClass {
         proxy.enableHarCaptureTypes(CaptureType.REQUEST_CONTENT, CaptureType.RESPONSE_CONTENT);
 
         Instagram.setDriver(driver);
-        WebDriverWait wait = new WebDriverWait(driver, 10);
         
         try {     	
         	Instagram.login("mrtns_95","martina95");
