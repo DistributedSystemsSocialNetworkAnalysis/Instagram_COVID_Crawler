@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
 
 public class Instagram {
     public static WebDriver driver;
-    public static ArrayList <String> posts; 
+    public static JSONArray posts; 
     public static int numOfPosts;
 
     
@@ -57,14 +57,40 @@ public class Instagram {
      
     
     /* cerca un hashtag su instagram */
-    public static void searchHashtag(String hashtag) throws IOException {
+    public static String searchHashtag(String hashtag) throws IOException {
     	/* se non contiene # lo inserisco all'inizio => in questo modo la ricerca viene facilitata (l'hashtag appare al primo posto) */
     	if(!hashtag.contains("#"))
     		hashtag = "#" + hashtag;
     	
     	driver.findElement(By.xpath(Xpaths.input_search_bar)).sendKeys(hashtag);
+    	String realHashtag = driver.findElement(By.xpath("/html/body/div[1]/section/nav/div[2]/div/div/div[2]/div[3]/div[2]/div/a[1]/div/div/div[1]/span")).getText();    	
+    	//String[] s = text.split("/n");
+    	//String realHashtag = s[0];
+    	System.out.println("real: " + realHashtag);
     	driver.findElement(By.xpath("/html/body/div[1]/section/nav/div[2]/div/div/div[2]/div[3]/div[2]/div/a[1]")).click(); // clicco invio
-    	driver.findElement(By.xpath(Xpaths.warning_search_btn)).click();
+    	
+    	/* cambio momentaneamente il timeout (non ho bisogno di 40 sec in questo caso) */
+    	driver.manage().timeouts().implicitlyWait(5, TimeUnit.SECONDS);
+    	
+    	/* controllo se appare il warning del ministero */
+    	if(isElementPresent(By.xpath(Xpaths.warning_search_btn)))
+    		driver.findElement(By.xpath(Xpaths.warning_search_btn)).click();
+    	
+    	/* lo rimetto come prima */
+    	driver.manage().timeouts().implicitlyWait(40, TimeUnit.SECONDS);
+    	
+    	return realHashtag;
+    }
+ 
+    
+    public static boolean isElementPresent(By by){
+        try{
+            driver.findElement(by);
+            return true;
+        }
+        catch(NoSuchElementException e){
+            return false;
+        }
     }
     
     
@@ -95,15 +121,16 @@ public class Instagram {
     /* scarica i post associati alla ricerca di "hashtag" e li salva in un file */
     public static void downloadData(String hashtag) throws IOException, ParseException, InterruptedException {
     	int colonna, riga;
-		File f = new File("./" + hashtag + "_hashtag_data.txt");
-		posts = new ArrayList<String>();
+    	String fileName = hashtag + "_hashtag_data.txt";
+    	File f = new File("./" + fileName);
+    	Thread dataHandler = new Thread(new DataHandler(f));
+		dataHandler.start();
+    	
+		posts = new JSONArray();
 		numOfPosts = 0;
 	
 		driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
-		
-		if(!f.exists())
-			f.createNewFile();
-		
+					
 		Thread timer = new Thread(new TimeOut());
 		timer.start();    
 		
@@ -120,38 +147,36 @@ public class Instagram {
 				while(colonna!=4) {
 					try {		
 						String elementPath = "/html/body/div[1]/section/main/article/div[2]/div/div[" + riga + "]/div[" + colonna + "]/a";
-			    		//WebElement el = new WebDriverWait(driver, 10).until(driver ->  driver.findElement(By.xpath(elementPath)));
 						WebDriverWait wait = new WebDriverWait(driver,40);
 						WebElement el = wait.until(ExpectedConditions.elementToBeClickable(By.xpath(elementPath)));
 						
 			    		String ref = el.getAttribute("href");
 			    		String jsonUrl = ref + "?__a=1";
 			    		
-			    		String postFromUrl = Instagram.getPostJson(jsonUrl);
+			    		JSONObject post = Instagram.getPostJson(jsonUrl);
 			    		
-			    		Instagram.addData(f,postFromUrl);
+			    		Instagram.addData(post);
 					} catch(NoSuchElementException e) { }
 					catch(Exception e1) { }
-	
-					//Instagram.loadPosts(driver);
+
 		    		colonna++;
 				} 
 				
 				if(riga==10)
 					riga--;
+				
 				riga++;	
 			}
 		
 		}
-			
+		
+		dataHandler.interrupt();			
 	}
 	
     
     /* aggiunge il post al JSONArray che li raccoglie */
-	private static void addData(File f, String postFromUrl) throws IOException {
-    	/* creo un JSONObject in cui inserisco solamente le info che mi interessano */
-    	//JSONObject post = new JSONObject();
-    	
+	@SuppressWarnings("unchecked")
+	private static void addData(JSONObject post) throws IOException {
     	// N.B: Il parsing si far‡ poi, raccolgo tutto il json del post
     	
     	/*
@@ -175,30 +200,15 @@ public class Instagram {
         	post.put("Location",null);
         */
 
-    	/* se localmente ho salvato gi√† 100 post li scrivo su file e svuoto l'array */
-    	if(posts.size()==10) {
-    		writeData(f);
-    		posts = new ArrayList<String>();
-    	}
-    	
-    	posts.add(postFromUrl);
+    	posts.add(post);
     	numOfPosts++;
     	
-    	System.out.println("Post " + numOfPosts + ":" + postFromUrl);
+    	System.out.println("Post " + numOfPosts + ":" + post);
     }
     
-    
-    /* scrivo il contenuto corrente del JSONArray posts (append) */
-	private static void writeData(File f) throws IOException {
-		FileWriter fw = new FileWriter(f,true);	
-		for(String p: posts)
-			fw.write(p);
-		fw.close();
-	} 
-
-
+	
 	/* estraggo i dati utili in JSON */
-    public static String getPostJson(String jsonUrl) throws IOException, MalformedURLException, ParseException {
+    public static JSONObject getPostJson(String jsonUrl) throws IOException, MalformedURLException, ParseException {
     	URL url = new URL(jsonUrl);	
 		HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 		conn.setConnectTimeout(0);
@@ -209,11 +219,11 @@ public class Instagram {
 		BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));		
 		String jsonString = br.readLine();
 		
-		/*
+		/* */
 		JSONParser parser = new JSONParser();		
 		JSONObject post = (JSONObject) parser.parse(jsonString);
-		*/
-		return jsonString;
+		
+		return post;
     }
     
     
@@ -227,6 +237,7 @@ public class Instagram {
         }
         catch(Exception ignore){}
     }
+    
     
     private static Boolean loadPosts(WebDriver driver) throws InterruptedException {
 		long lastHeight = (long) ((JavascriptExecutor) driver).executeScript("return document.body.scrollHeight");

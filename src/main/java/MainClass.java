@@ -59,9 +59,8 @@ public class MainClass {
         	
         	/* scarico i dati per 30 minuti per ogni hashtag */
         	for(int i=0; i<hashtags.length; i++) {
-        		Instagram.searchHashtag(hashtags[i]);
-         		
-        		Instagram.downloadData(hashtags[i]);		       		
+        		String realHashtag = Instagram.searchHashtag(hashtags[i]);
+        		Instagram.downloadData(realHashtag.substring(1));		       		
         	}
         } catch(Exception e) {
         	e.printStackTrace();
