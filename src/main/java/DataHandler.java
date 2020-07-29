@@ -1,12 +1,7 @@
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
+import java.io.*;
 import java.io.IOException;
-
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
+import org.json.simple.*;
+import org.json.simple.parser.*;
 
 
 public class DataHandler implements Runnable {
@@ -68,7 +63,7 @@ public class DataHandler implements Runnable {
 		
 	}
 	
-	/* scrivo il contenuto corrente del JSONArray posts (append) */
+	/* scrivo i dati sul file */
 	public static void writeData(JSONArray array) throws IOException {
 		FileWriter fw = new FileWriter(data);	
 
@@ -76,6 +71,5 @@ public class DataHandler implements Runnable {
 		
 		fw.close();
 	} 
-
 
 }

@@ -57,7 +57,7 @@ public class MainClass {
         	
         	System.out.println("Retrieving data from hot hashtags...");	
         	
-        	/* scarico i dati per 30 minuti per ogni hashtag */
+        	/* scarico i dati 3 orei per ogni hashtag */
         	for(int i=0; i<hashtags.length; i++) {
         		String realHashtag = Instagram.searchHashtag(hashtags[i]);
         		Instagram.downloadData(realHashtag.substring(1));		       		

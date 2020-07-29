@@ -1,11 +1,11 @@
 
 public class TimeOut implements Runnable {
-	int searchTime = 18000000; // 30 minuti
+	int searchTime = 10800000; // 3 ore
 	
 	@Override
 	public void run() {
 		try {
-			Thread.sleep(18000000); 
+			Thread.sleep(searchTime); 
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}

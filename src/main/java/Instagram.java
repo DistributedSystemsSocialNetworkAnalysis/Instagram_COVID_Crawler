@@ -64,9 +64,6 @@ public class Instagram {
     	
     	driver.findElement(By.xpath(Xpaths.input_search_bar)).sendKeys(hashtag);
     	String realHashtag = driver.findElement(By.xpath("/html/body/div[1]/section/nav/div[2]/div/div/div[2]/div[3]/div[2]/div/a[1]/div/div/div[1]/span")).getText();    	
-    	//String[] s = text.split("/n");
-    	//String realHashtag = s[0];
-    	System.out.println("real: " + realHashtag);
     	driver.findElement(By.xpath("/html/body/div[1]/section/nav/div[2]/div/div/div[2]/div[3]/div[2]/div/a[1]")).click(); // clicco invio
     	
     	/* cambio momentaneamente il timeout (non ho bisogno di 40 sec in questo caso) */
