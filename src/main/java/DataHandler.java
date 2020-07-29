@@ -21,7 +21,7 @@ public class DataHandler implements Runnable {
 		
 		if(!data.exists()) {
 			System.out.println("Creo il file...");
-			data.createNewFile();
+			data.createNewFile(); 
 			System.out.println("File creato: " + data.getName());
 		} 
 	}

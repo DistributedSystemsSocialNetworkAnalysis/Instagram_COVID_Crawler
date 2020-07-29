@@ -228,7 +228,7 @@ public class Instagram {
     
     
     /* funzione di scrolling dei post di Instagram (ricerca hashtag) */
-    public static void scrollPosts() {
+    public static void scrollPosts() { 
     	try{
         	JavascriptExecutor js = (JavascriptExecutor) driver;
         	js.executeScript("window.scrollTo(0, document.body.scrollHeight)");

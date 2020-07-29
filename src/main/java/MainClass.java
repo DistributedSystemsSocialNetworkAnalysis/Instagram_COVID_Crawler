@@ -63,7 +63,7 @@ public class MainClass {
         		Instagram.downloadData(realHashtag.substring(1));		       		
         	}
         } catch(Exception e) {
-        	e.printStackTrace();
+        	e.printStackTrace(); 
         }
         
         /* chiusura */
