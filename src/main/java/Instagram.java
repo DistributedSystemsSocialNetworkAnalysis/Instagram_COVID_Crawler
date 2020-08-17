@@ -119,10 +119,12 @@ public class Instagram {
     public static void downloadData(String hashtag) throws IOException, ParseException, InterruptedException {
     	int colonna, riga;
     	String fileName = hashtag + "_hashtag_data.txt";
-    	File f = new File("./" + fileName);
+    	File f = new File("C:\\Users\\marti\\git\\TirocinioProtano\\" + fileName);
     	Thread dataHandler = new Thread(new DataHandler(f));
 		dataHandler.start();
     	
+		DataHandler.setHashtag(hashtag);
+		
 		posts = new JSONArray();
 		numOfPosts = 0;
 	
@@ -139,7 +141,7 @@ public class Instagram {
 			while(true) {
 				colonna=1;	
 				Instagram.loadPosts(driver);
-
+				
 				System.out.println("---");
 				while(colonna!=4) {
 					try {		
@@ -195,8 +197,8 @@ public class Instagram {
         	post.put("Location",((JSONObject)((JSONObject)((JSONObject)((JSONObject)postFromUrl.get("graphql"))).get("shortcode_media")).get("location")).get("name"));
         else 
         	post.put("Location",null);
-        */
-
+        */	
+				
     	posts.add(post);
     	numOfPosts++;
     	
@@ -225,12 +227,12 @@ public class Instagram {
     
     
     /* funzione di scrolling dei post di Instagram (ricerca hashtag) */
-    public static void scrollPosts() { 
+    public static void unlockScroll() { 
     	try{
         	JavascriptExecutor js = (JavascriptExecutor) driver;
-        	js.executeScript("window.scrollTo(0, document.body.scrollHeight)");
-        	js.executeScript("window.scrollTo(0,-400)"); // a volte lo scrolling si blocca e per sbloccarlo basta tornare su e riscrollare
-        	js.executeScript("window.scrollTo(0, document.body.scrollHeight)");
+        	//js.executeScript("window.scrollTo(0, document.body.scrollHeight)");
+        	js.executeScript("window.scrollTo(0,-200)"); // a volte lo scrolling si blocca e per sbloccarlo basta tornare su e riscrollare
+        	//js.executeScript("window.scrollTo(0, document.body.scrollHeight)");
         }
         catch(Exception ignore){}
     }
@@ -257,6 +259,38 @@ public class Instagram {
         }
  
 		return true;
+	}
+    
+    public static void searchAndDownload(String input, int num) {
+    	String hashtag; 
+    	
+	    driver.findElement(By.xpath(Xpaths.input_search_bar)).sendKeys(input);
+		for(int i = 1; i<=num; i++) {
+			hashtag = driver.findElement(By.xpath("/html/body/div[1]/section/nav/div[2]/div/div/div[2]/div[3]/div[2]/div/a[" + i + "]/div/div/div[1]/span")).getText();
+			driver.findElement(By.xpath("/html/body/div[1]/section/nav/div[2]/div/div/div[2]/div[3]/div[2]/div/a[1]/div")).click();
+			
+			/* cambio momentaneamente il timeout (non ho bisogno di 40 sec in questo caso) */
+	    	driver.manage().timeouts().implicitlyWait(5, TimeUnit.SECONDS);
+	    	
+	    	/* controllo se appare il warning del ministero */
+	    	if(isElementPresent(By.xpath(Xpaths.warning_search_btn)))
+	    		driver.findElement(By.xpath(Xpaths.warning_search_btn)).click();
+	    	
+	    	/* lo rimetto come prima */
+	    	driver.manage().timeouts().implicitlyWait(40, TimeUnit.SECONDS);
+			
+			try {
+				Instagram.downloadData(hashtag);
+			} catch (IOException | ParseException | InterruptedException e) {
+				e.printStackTrace();
+			}
+			
+			Instagram.backToHomePage();
+		}
+    }
+
+	public static void backToHomePage() {
+		driver.get("www.instagram.com");
 	}
 
 }
