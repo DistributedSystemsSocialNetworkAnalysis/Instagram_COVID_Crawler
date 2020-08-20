@@ -18,6 +18,7 @@ public class DuplicateEliminator {
 	}
 	
 	public void deleteCopies() throws IOException, ParseException {
+		/*
 		FileReader fr = new FileReader(data);
 		JSONParser parser = new JSONParser();
 		JSONArray posts = (JSONArray) parser.parse(fr);
@@ -29,6 +30,19 @@ public class DuplicateEliminator {
 
 		for(int i = 0; i < length; i++){
 		  set.add((JSONObject) posts.get(i));
+		}
+		*/
+		
+		FileReader fr = new FileReader(data);
+		JSONParser parser = new JSONParser();
+		JSONArray posts = (JSONArray) parser.parse(fr);
+		int length = posts.size();
+		
+		System.out.println("Dimensione pre-filtraggio: " + length);
+		
+		Set<String> set = new HashSet<String>();
+		for(int i = 0; i < length; i++){
+			 set.add(((JSONObject)posts.get(i)).toJSONString());
 		}
 		
 		System.out.println("Dimensione dopo il filtraggio: " + set.size());

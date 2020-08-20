@@ -94,7 +94,7 @@ public class Instagram {
     /* leggo tutti gli hashtag salienti dal file hashtag.txt */
     public static String[] readHashtags() throws IOException {
     	String[] hashtags = new String[9];
-    	File f = new File("./hashtag.txt");
+    	File f = new File("./hashtag.json");
     	FileReader reader = null;
     	
     	try {
@@ -118,12 +118,9 @@ public class Instagram {
     /* scarica i post associati alla ricerca di "hashtag" e li salva in un file */
     public static void downloadData(String hashtag) throws IOException, ParseException, InterruptedException {
     	int colonna, riga;
-    	String fileName = hashtag + "_hashtag_data.txt";
-    	File f = new File("C:\\Users\\marti\\git\\TirocinioProtano\\" + fileName);
-    	Thread dataHandler = new Thread(new DataHandler(f));
-		dataHandler.start();
     	
-		DataHandler.setHashtag(hashtag);
+    	DataHandler handler = new DataHandler(hashtag);
+    	handler.createDataFile();
 		
 		posts = new JSONArray();
 		numOfPosts = 0;
@@ -154,7 +151,7 @@ public class Instagram {
 			    		
 			    		JSONObject post = Instagram.getPostJson(jsonUrl);
 			    		
-			    		Instagram.addData(post);
+			    		Instagram.addData(handler,post);
 					} catch(NoSuchElementException e) { }
 					catch(Exception e1) { }
 
@@ -167,15 +164,13 @@ public class Instagram {
 				riga++;	
 			}
 		
-		}
-		
-		dataHandler.interrupt();			
+		}			
 	}
 	
     
     /* aggiunge il post al JSONArray che li raccoglie */
 	@SuppressWarnings("unchecked")
-	private static void addData(JSONObject post) throws IOException {
+	private static void addData(DataHandler handler, JSONObject post) throws IOException {
     	// N.B: Il parsing si farà poi, raccolgo tutto il json del post
     	
     	/*
@@ -201,6 +196,9 @@ public class Instagram {
 				
     	posts.add(post);
     	numOfPosts++;
+    	
+    	if(Instagram.numOfPosts%500 == 0 && numOfPosts!=0)
+			handler.writeData(posts);
     	
     	System.out.println("Post " + numOfPosts + ":" + post);
     }
