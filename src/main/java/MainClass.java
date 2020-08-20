@@ -59,12 +59,12 @@ public class MainClass {
         	/* HASHTAGS SEARCH */
         	
         	// covid_19, covid19, covid
-        	Instagram.searchAndDownload("#cov",3);   
+        	//Instagram.searchAndDownload("#cov",3);   
      
-        	Instagram.searchAndDownload("#coronavirus",1);       	
+        	//Instagram.searchAndDownload("#coronavirus",1);       	
         	
         	// quarantine, quarantena, quarantinelife
-        	Instagram.searchAndDownload("#quara",3);
+        	//Instagram.searchAndDownload("#quara",3);
         	
         	Instagram.searchAndDownload("#lockdown",1);  
         	Instagram.searchAndDownload("#lockdowndiaries",1);  

@@ -10,6 +10,9 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedCondition;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
@@ -143,7 +146,7 @@ public class Instagram {
 				while(colonna!=4) {
 					try {		
 						String elementPath = "/html/body/div[1]/section/main/article/div[2]/div/div[" + riga + "]/div[" + colonna + "]/a";
-						WebDriverWait wait = new WebDriverWait(driver,40);
+						WebDriverWait wait = new WebDriverWait(driver,50);
 						WebElement el = wait.until(ExpectedConditions.elementToBeClickable(By.xpath(elementPath)));
 						
 			    		String ref = el.getAttribute("href");
@@ -193,9 +196,11 @@ public class Instagram {
         else 
         	post.put("Location",null);
         */	
-				
-    	posts.add(post);
-    	numOfPosts++;
+		
+		if(isParsable(post)) {
+			posts.add(post);
+			numOfPosts++;
+		}
     	
     	if(Instagram.numOfPosts%500 == 0 && numOfPosts!=0)
 			handler.writeData(posts);
@@ -203,6 +208,29 @@ public class Instagram {
     	System.out.println("Post " + numOfPosts + ":" + post);
     }
     
+	public static boolean isParsable(JSONObject obj) {
+		JSONParser parser = new JSONParser();
+		
+		try {
+			JSONObject post = (JSONObject) parser.parse(obj.toJSONString());
+		} catch (Exception e) {
+			System.err.println("Errore di parsing: post scartato");
+			return false;
+		}
+		
+		return true;
+	}
+	
+	
+	private Boolean isValidJson(String maybeJson){
+        try {
+            final ObjectMapper mapper = new ObjectMapper();
+            mapper.readTree(maybeJson);
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
 	
 	/* estraggo i dati utili in JSON */
     public static JSONObject getPostJson(String jsonUrl) throws IOException, MalformedURLException, ParseException {
