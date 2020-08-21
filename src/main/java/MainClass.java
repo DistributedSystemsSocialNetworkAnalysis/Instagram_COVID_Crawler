@@ -71,10 +71,10 @@ public class MainClass {
         	//Instagram.searchAndDownload("#stayhome",1); 
         	
         	// socialdistancing, socialdistance
-        	Instagram.searchAndDownload("#socialdistanc",2);  
+        	//Instagram.searchAndDownload("#socialdistanc",2);  
         	
         	// pandemic, pandemic2020
-        	Instagram.searchAndDownload("#pandemic",2);  
+        	//Instagram.searchAndDownload("#pandemic",2);  
         	
         	Instagram.searchAndDownload("#andràtuttobene", 1);
 
