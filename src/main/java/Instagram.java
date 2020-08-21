@@ -197,13 +197,15 @@ public class Instagram {
         	post.put("Location",null);
         */	
 		
-		if(isParsable(post)) {
+		if(isValidJson(post.toJSONString())) {
 			posts.add(post);
 			numOfPosts++;
 		}
     	
-    	if(Instagram.numOfPosts%500 == 0 && numOfPosts!=0)
+    	if(Instagram.numOfPosts%500 == 0 && numOfPosts!=0) {
 			handler.writeData(posts);
+			posts = new JSONArray();
+    	}
     	
     	System.out.println("Post " + numOfPosts + ":" + post);
     }
@@ -222,7 +224,7 @@ public class Instagram {
 	}
 	
 	
-	private Boolean isValidJson(String maybeJson){
+	private static Boolean isValidJson(String maybeJson){
         try {
             final ObjectMapper mapper = new ObjectMapper();
             mapper.readTree(maybeJson);

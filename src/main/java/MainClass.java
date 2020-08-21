@@ -66,9 +66,9 @@ public class MainClass {
         	// quarantine, quarantena, quarantinelife
         	//Instagram.searchAndDownload("#quara",3);
         	
-        	Instagram.searchAndDownload("#lockdown",1);  
-        	Instagram.searchAndDownload("#lockdowndiaries",1);  
-        	Instagram.searchAndDownload("#stayhome",1); 
+        	//Instagram.searchAndDownload("#lockdown",1);  
+        	//Instagram.searchAndDownload("#lockdowndiaries",1);  
+        	//Instagram.searchAndDownload("#stayhome",1); 
         	
         	// socialdistancing, socialdistance
         	Instagram.searchAndDownload("#socialdistanc",2);  

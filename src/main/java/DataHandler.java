@@ -50,7 +50,7 @@ public class DataHandler {
 	public void writeData(JSONArray array) throws IOException {
 		/* scrivo i dati che ho adesso (500 post) sul file corrente */
 		try(FileWriter fw = new FileWriter(data, false)){
-			fw.write(Instagram.posts.toJSONString());
+			fw.write(array.toJSONString());
 			fw.flush();
 			fw.close();
 		} catch (Exception e) {
