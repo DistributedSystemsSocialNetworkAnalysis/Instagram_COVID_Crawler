@@ -64,17 +64,17 @@ public class MainClass {
         	//Instagram.searchAndDownload("#coronavirus",1);       	
         	
         	// quarantine, quarantena, quarantinelife
-        	//Instagram.searchAndDownload("#quara",3);
+        	Instagram.searchAndDownload("#quara",3);
         	
-        	//Instagram.searchAndDownload("#lockdown",1);  
-        	//Instagram.searchAndDownload("#lockdowndiaries",1);  
-        	//Instagram.searchAndDownload("#stayhome",1); 
+        	Instagram.searchAndDownload("#lockdown",1);  
+        	Instagram.searchAndDownload("#lockdowndiaries",1);  
+        	Instagram.searchAndDownload("#stayhome",1); 
         	
         	// socialdistancing, socialdistance
-        	//Instagram.searchAndDownload("#socialdistanc",2);  
+        	Instagram.searchAndDownload("#socialdistanc",2);  
         	
         	// pandemic, pandemic2020
-        	//Instagram.searchAndDownload("#pandemic",2);  
+        	Instagram.searchAndDownload("#pandemic",2);  
         	
         	Instagram.searchAndDownload("#andràtuttobene", 1);
 

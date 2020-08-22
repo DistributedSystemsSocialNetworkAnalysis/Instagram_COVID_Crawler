@@ -121,6 +121,7 @@ public class Instagram {
     /* scarica i post associati alla ricerca di "hashtag" e li salva in un file */
     public static void downloadData(String hashtag) throws IOException, ParseException, InterruptedException {
     	int colonna, riga;
+    	int failedAttempts = 0;
     	
     	DataHandler handler = new DataHandler(hashtag);
     	handler.createDataFile();
@@ -137,10 +138,22 @@ public class Instagram {
 		
 		/* finché non scade il timer per la ricerca e il download dei dati correlati all'hashtag */
 		riga=1;
-		while(timer.isAlive()) {
-			while(true) {
+		while(timer.isAlive() || numOfPosts%500 != 0) {
 				colonna=1;	
-				Instagram.loadPosts(driver);
+				while(Instagram.loadPosts(driver)==false) {
+					System.err.println("Blocked scrolling");
+					failedAttempts++;
+					if(failedAttempts == 3)
+						break;					
+					Thread.sleep(2000);
+					Instagram.unlockScroll();				
+				}
+				
+				if(failedAttempts == 3) {
+					handler.writeData(posts);
+					break;
+				}
+						
 				
 				System.out.println("---");
 				while(colonna!=4) {
@@ -165,8 +178,6 @@ public class Instagram {
 					riga--;
 				
 				riga++;	
-			}
-		
 		}			
 	}
 	
@@ -291,11 +302,13 @@ public class Instagram {
     
     public static void searchAndDownload(String input, int num) {
     	String hashtag; 
-    	
-	    driver.findElement(By.xpath(Xpaths.input_search_bar)).sendKeys(input);
+    		    
 		for(int i = 1; i<=num; i++) {
+			driver.findElement(By.xpath(Xpaths.input_search_bar)).sendKeys(input);
 			hashtag = driver.findElement(By.xpath("/html/body/div[1]/section/nav/div[2]/div/div/div[2]/div[3]/div[2]/div/a[" + i + "]/div/div/div[1]/span")).getText();
-			driver.findElement(By.xpath("/html/body/div[1]/section/nav/div[2]/div/div/div[2]/div[3]/div[2]/div/a[1]/div")).click();
+			//driver.findElement(By.xpath("/html/body/div[1]/section/nav/div[2]/div/div/div[2]/div[3]/div[2]/div/a[1]/div")).click();
+			
+			driver.findElement(By.xpath("/html/body/div[1]/section/nav/div[2]/div/div/div[2]/div[3]/div[2]/div/a[" + i + "]/div/div/div[1]/span")).click();
 			
 			/* cambio momentaneamente il timeout (non ho bisogno di 40 sec in questo caso) */
 	    	driver.manage().timeouts().implicitlyWait(5, TimeUnit.SECONDS);
@@ -314,11 +327,12 @@ public class Instagram {
 			}
 			
 			Instagram.backToHomePage();
+			//driver.findElement(By.xpath(Xpaths.input_search_bar)).sendKeys(input);
 		}
     }
 
 	public static void backToHomePage() {
-		driver.get("www.instagram.com");
+		driver.get("https://www.instagram.com");
 	}
 
 }
