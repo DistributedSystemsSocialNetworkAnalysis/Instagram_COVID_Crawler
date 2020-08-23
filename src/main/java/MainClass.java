@@ -19,16 +19,7 @@ public class MainClass {
         Proxy seleniumProxy = ClientUtil.createSeleniumProxy(proxy);
         seleniumProxy.setHttpProxy("localhost:" + proxy.getPort());
         seleniumProxy.setSslProxy("localhost:" + proxy.getPort());
-        
-        /*
-        String[] hashtags = null;
-        try {
-			hashtags = Instagram.readHashtags();
-		} catch (IOException e1) {
-			System.out.println("Errore nel reperimento degli hashtags.");
-			e1.printStackTrace();
-		} */
-             
+
         /* setto il driver */
         System.setProperty("webdriver.gecko.driver", "./geckodriver.exe");
         
@@ -50,71 +41,42 @@ public class MainClass {
         proxy.enableHarCaptureTypes(CaptureType.REQUEST_CONTENT, CaptureType.RESPONSE_CONTENT);
 
         Instagram.setDriver(driver);
-        
-        try {     	
-        	Instagram.login("mrtns_95","martina95");
-        	
-        	System.out.println("Retrieving data from hot hashtags...");	
-        	
-        	/* HASHTAGS SEARCH */
-        	
-        	// covid_19, covid19, covid
-        	Instagram.searchAndDownload("#cov",3);   
-     
-        	Instagram.searchAndDownload("#coronavirus",1);       	
-        	
-        	// quarantine, quarantena, quarantinelife
-        	Instagram.searchAndDownload("#quara",3);
-        	
-        	Instagram.searchAndDownload("#lockdown",1);  
-        	Instagram.searchAndDownload("#lockdowndiaries",1);  
-        	Instagram.searchAndDownload("#stayhome",1); 
-        	
-        	// socialdistancing, socialdistance
-        	Instagram.searchAndDownload("#socialdistanc",2);  
-        	
-        	// pandemic, pandemic2020
-        	Instagram.searchAndDownload("#pandemic",2);  
-        	
-        	Instagram.searchAndDownload("#andràtuttobene", 1);
-
-        	/* scarico i dati 3 orei per ogni hashtag
-        	for(int i=0; i<hashtags.length; i++) {
-        		//String realHashtag = Instagram.searchHashtag(hashtags[i]);
-        		
-        		if(!hashtags[i].contains("#"))
-            		hashtags[i] = "#" + "covid";
-            	
-            	driver.findElement(By.xpath(Xpaths.input_search_bar)).sendKeys("covid");
-            	driver.findElement(By.xpath("/html/body/div[1]/section/nav/div[2]/div/div/div[2]/div[3]/div[2]/div/a[2]")).click();
-            	//driver.findElement(By.xpath("/html/body/div[1]/section/nav/div[2]/div/div/div[2]/div[3]/div[2]/div/a[1]")).click(); // clicco invio
-            	
-            	/* cambio momentaneamente il timeout (non ho bisogno di 40 sec in questo caso) 
-            	driver.manage().timeouts().implicitlyWait(5, TimeUnit.SECONDS);
-            	
-            	try{
-                    driver.findElement(By.xpath(Xpaths.warning_search_btn));
-                    driver.findElement(By.xpath(Xpaths.warning_search_btn)).click();
-                }
-                catch(NoSuchElementException e){
-                    
-                }
-            	
-            	/* lo rimetto come prima 
-            	driver.manage().timeouts().implicitlyWait(40, TimeUnit.SECONDS);
-        	     
-            	Instagram.downloadData("covid");
-     	
-        		//Instagram.downloadData(realHashtag.substring(1));		       		
-        	}
-        	*/
-        } catch(Exception e) {
-        	e.printStackTrace(); 
+        while(true) {
+	        try {     	
+	        	Instagram.login("mrtns_95","martina95");
+	        	
+	        	System.out.println("Retrieving data from hot hashtags...");	
+	        	
+	        	/* HASHTAGS SEARCH */
+	        	
+	        	// covid_19, covid19, covid
+	        	Instagram.searchAndDownload("#cov",3);   
+	     
+	        	Instagram.searchAndDownload("#coronavirus",1);       	
+	        	
+	        	// quarantine, quarantena, quarantinelife
+	        	Instagram.searchAndDownload("#quara",3);
+	        	
+	        	Instagram.searchAndDownload("#lockdown",1);  
+	        	Instagram.searchAndDownload("#lockdowndiaries",1);  
+	        	Instagram.searchAndDownload("#stayhome",1); 
+	        	
+	        	// socialdistancing, socialdistance
+	        	Instagram.searchAndDownload("#socialdistanc",2);  
+	        	
+	        	// pandemic, pandemic2020
+	        	Instagram.searchAndDownload("#pandemic",2);  
+	        	
+	        	Instagram.searchAndDownload("#andràtuttobene", 1);
+	
+	        } catch(Exception e) {
+	        	e.printStackTrace(); 
+	        } 
         }
         
-        /* chiusura */
-        proxy.stop();
-        driver.close();
+        /* chiusura 
+	    proxy.stop();
+	    driver.close(); */
     }
     
 }

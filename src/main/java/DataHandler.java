@@ -47,17 +47,21 @@ public class DataHandler {
 	
 	
 	/* scrivo i dati sul file */
-	public void writeData(JSONArray array) throws IOException {
-		/* scrivo i dati che ho adesso (500 post) sul file corrente */
-		try(FileWriter fw = new FileWriter(data, false)){
-			fw.write(array.toJSONString());
-			fw.flush();
-			fw.close();
-		} catch (Exception e) {
-			e.printStackTrace();
-		} 
+	public void writeData(JSONArray array, boolean finished) throws IOException {
+		Writer writer = null;
+
+		try {
+		    writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(data), "utf-8"));
+		    writer.write(array.toJSONString());
+		    writer.flush();
+		} catch (IOException ex) {
+		    // Report
+		} finally {
+		   try {writer.close();} catch (Exception ex) {/*ignore*/}
+		}
 		
 		/* creo il file per mantenere i prossimi dati */
-		createDataFile();
+		if(!finished)
+			createDataFile();
 	} 
 }

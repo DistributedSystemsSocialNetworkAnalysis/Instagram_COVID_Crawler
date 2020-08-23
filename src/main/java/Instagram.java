@@ -150,11 +150,10 @@ public class Instagram {
 				}
 				
 				if(failedAttempts == 3) {
-					handler.writeData(posts);
+					handler.writeData(posts,true);
 					break;
 				}
-						
-				
+									
 				System.out.println("---");
 				while(colonna!=4) {
 					try {		
@@ -207,15 +206,17 @@ public class Instagram {
         else 
         	post.put("Location",null);
         */	
-		
+				
 		if(isValidJson(post.toJSONString())) {
-			posts.add(post);
+			escape(post.toJSONString());
+			posts.add(post);		
 			numOfPosts++;
 		}
-    	
-    	if(Instagram.numOfPosts%500 == 0 && numOfPosts!=0) {
-			handler.writeData(posts);
-			posts = new JSONArray();
+				
+    	/* quando i post sono un multiplo di 500 li scrivo su un file creato appositamente */
+    	if(Instagram.numOfPosts%1000 == 0 && numOfPosts!=0) {
+			handler.writeData(posts,false);
+			Instagram.posts = new JSONArray();
     	}
     	
     	System.out.println("Post " + numOfPosts + ":" + post);
@@ -241,6 +242,7 @@ public class Instagram {
             mapper.readTree(maybeJson);
             return true;
         } catch (IOException e) {
+        	e.printStackTrace();
             return false;
         }
     }
@@ -253,9 +255,10 @@ public class Instagram {
 		conn.setRequestMethod("GET");
 		conn.setDoOutput(false);
 		conn.connect();
-			
-		BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));		
+		
+		BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream(), "UTF-8"));		
 		String jsonString = br.readLine();
+		
 		
 		/* */
 		JSONParser parser = new JSONParser();		
@@ -333,6 +336,19 @@ public class Instagram {
 
 	public static void backToHomePage() {
 		driver.get("https://www.instagram.com");
+	}
+	
+	private static String escape(String raw) {
+	    String escaped = raw;
+	    escaped = escaped.replace("\\", "\\\\");
+	    escaped = escaped.replace("\"", "\\\"");
+	    escaped = escaped.replace("\b", "\\b");
+	    escaped = escaped.replace("\f", "\\f");
+	    escaped = escaped.replace("\n", "\\n");
+	    escaped = escaped.replace("\r", "\\r");
+	    escaped = escaped.replace("\t", "\\t");
+	    // TODO: escape other non-printing characters using uXXXX notation
+	    return escaped;
 	}
 
 }
