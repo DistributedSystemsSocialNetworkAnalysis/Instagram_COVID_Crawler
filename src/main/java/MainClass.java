@@ -68,7 +68,7 @@ public class MainClass {
 	        	Instagram.searchAndDownload("#pandemic",2);  
 	        	
 	        	Instagram.searchAndDownload("#andràtuttobene", 1);
-	
+	 
 	        } catch(Exception e) {
 	        	e.printStackTrace(); 
 	        } 
