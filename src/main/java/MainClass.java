@@ -41,12 +41,12 @@ public class MainClass {
         proxy.enableHarCaptureTypes(CaptureType.REQUEST_CONTENT, CaptureType.RESPONSE_CONTENT);
 
         Instagram.setDriver(driver);
+        
+        Instagram.login("mrtns_95","martina95");	  
+        
+	    System.out.println("Retrieving data from hot hashtags...");	
         while(true) {
 	        try {     	
-	        	Instagram.login("mrtns_95","martina95");
-	        	
-	        	System.out.println("Retrieving data from hot hashtags...");	
-	        	
 	        	/* HASHTAGS SEARCH */
 	        	
 	        	// covid_19, covid19, covid
@@ -73,10 +73,6 @@ public class MainClass {
 	        	e.printStackTrace(); 
 	        } 
         }
-        
-        /* chiusura 
-	    proxy.stop();
-	    driver.close(); */
     }
     
 }
