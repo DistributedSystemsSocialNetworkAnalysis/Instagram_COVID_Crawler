@@ -42,7 +42,7 @@ public class MainClass {
 
         Instagram.setDriver(driver);
         
-        Instagram.login("tirocinio_covid","19111995m");	  
+        Instagram.login("", "");	  
         
 	    System.out.println("Retrieving data from hot hashtags...");	
         while(true) {
