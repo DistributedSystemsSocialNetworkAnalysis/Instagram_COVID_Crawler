@@ -184,29 +184,7 @@ public class Instagram {
     /* aggiunge il post al JSONArray che li raccoglie */
 	@SuppressWarnings("unchecked")
 	private static void addData(DataHandler handler, JSONObject post) throws IOException {
-    	// N.B: Il parsing si farà poi, raccolgo tutto il json del post
-    	
-    	/*
-    	post.put("AccessibilityCaption", ((JSONObject)((JSONObject)((JSONObject)postFromUrl.get("graphql"))).get("shortcode_media")).get("accessibility_caption"));
-    	JSONArray captionText = ((JSONArray)((JSONObject)((JSONObject)((JSONObject)((JSONObject)postFromUrl.get("graphql"))).get("shortcode_media")).get("edge_media_to_caption")).get("edges"));
-    	if(captionText!=null)
-    		post.put("CaptionText",((JSONObject)((JSONObject)((JSONArray)((JSONObject)((JSONObject)((JSONObject)((JSONObject)postFromUrl.get("graphql"))).get("shortcode_media")).get("edge_media_to_caption")).get("edges")).get(0)).get("node")).get("text"));
-    	else post.put("CaptionText",null);
-    		
-    	post.put("NumberOfLikes",((JSONObject)((JSONObject)((JSONObject)((JSONObject)postFromUrl.get("graphql"))).get("shortcode_media")).get("edge_media_preview_like")).get("count"));
-    	post.put("NumberOfComments",((JSONObject)((JSONObject)((JSONObject)((JSONObject)postFromUrl.get("graphql"))).get("shortcode_media")).get("edge_media_to_parent_comment")).get("count"));
-    	post.put("Timestamp",((JSONObject)((JSONObject)((JSONObject)postFromUrl.get("graphql"))).get("shortcode_media")).get("taken_at_timestamp"));
-    	Timestamp t = new Timestamp((long) ((JSONObject)((JSONObject)((JSONObject)postFromUrl.get("graphql"))).get("shortcode_media")).get("taken_at_timestamp"));
-    	Date date=new Date(t.getTime());
-    	post.put("LocalDate", "" + date);
-    	
-    	JSONObject location = (JSONObject) ((JSONObject)((JSONObject)((JSONObject)postFromUrl.get("graphql"))).get("shortcode_media")).get("location");
-    	if(location!=null && location.containsKey("name"))
-        	post.put("Location",((JSONObject)((JSONObject)((JSONObject)((JSONObject)postFromUrl.get("graphql"))).get("shortcode_media")).get("location")).get("name"));
-        else 
-        	post.put("Location",null);
-        */	
-				
+
 		if(isValidJson(post.toJSONString())) {
 			escape(post.toJSONString());
 			posts.add(post);		

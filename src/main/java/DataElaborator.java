@@ -6,9 +6,8 @@ import org.json.simple.*;
 import org.json.simple.parser.*;
 
 public class DataElaborator {
-	static File data;
 	
-	public void deleteCopies() throws IOException, ParseException {
+	public static void deleteCopies(File data) throws IOException, ParseException {
 		FileReader fr = new FileReader(data);
 		JSONParser parser = new JSONParser();
 		JSONArray posts = (JSONArray) parser.parse(fr);
@@ -25,49 +24,69 @@ public class DataElaborator {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public static void filterInformations(File f, JSONArray posts) throws IOException {
-		String nameOfFileFiltered = f.getName() + " - filtered";
-		File fileFiltered = new File(f.getAbsolutePath() + "\\" + nameOfFileFiltered);
+	public static void filterInformations(File f) throws IOException {
+		System.out.println("Filtraggio...");
+		Reader reader = null;
+		JSONArray posts = null;
+		try {
+		    reader = new BufferedReader(new InputStreamReader(new FileInputStream(f), "utf-8"));
+		    JSONParser parser = new JSONParser();
+		    posts = (JSONArray) parser.parse(reader);	
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+
+		File fileFiltered = new File(f.getAbsolutePath() + " - filtered");
 		if(!fileFiltered.exists()) 
 			fileFiltered.createNewFile();
+		JSONArray filteredPosts = new JSONArray();
 		
-		for(int i = 0; i < posts.size(); i++) {
-			JSONObject post = (JSONObject) posts.get(i);
+		for(int i = 0; i < posts.size(); i++) {		
+			JSONObject newPost = new JSONObject(); // nuovo post con info filtrate
+			JSONObject post = (JSONObject) posts.get(i); // post originale
 			
-			post.put("AccessibilityCaption", ((JSONObject)((JSONObject)((JSONObject)post.get("graphql"))).get("shortcode_media")).get("accessibility_caption"));
+			newPost.put("AccessibilityCaption", ((JSONObject)((JSONObject)((JSONObject)post.get("graphql"))).get("shortcode_media")).get("accessibility_caption"));
 	    	JSONArray captionText = ((JSONArray)((JSONObject)((JSONObject)((JSONObject)((JSONObject)post.get("graphql"))).get("shortcode_media")).get("edge_media_to_caption")).get("edges"));
-	    	if(captionText!=null)
-	    		post.put("CaptionText",((JSONObject)((JSONObject)((JSONArray)((JSONObject)((JSONObject)((JSONObject)((JSONObject)post.get("graphql"))).get("shortcode_media")).get("edge_media_to_caption")).get("edges")).get(0)).get("node")).get("text"));
-	    	else post.put("CaptionText",null);
+	    	
+	    	if(captionText.size()!=0)
+	    		newPost.put("CaptionText",((JSONObject)((JSONObject)((JSONArray)((JSONObject)((JSONObject)((JSONObject)((JSONObject)post.get("graphql"))).get("shortcode_media")).get("edge_media_to_caption")).get("edges")).get(0)).get("node")).get("text"));
+	    	else newPost.put("CaptionText",null);
 	    		
-	    	post.put("NumberOfLikes",((JSONObject)((JSONObject)((JSONObject)((JSONObject)post.get("graphql"))).get("shortcode_media")).get("edge_media_preview_like")).get("count"));
-	    	post.put("NumberOfComments",((JSONObject)((JSONObject)((JSONObject)((JSONObject)post.get("graphql"))).get("shortcode_media")).get("edge_media_to_parent_comment")).get("count"));
-	    	post.put("Timestamp",((JSONObject)((JSONObject)((JSONObject)post.get("graphql"))).get("shortcode_media")).get("taken_at_timestamp"));
-	    	Timestamp t = new Timestamp((long) ((JSONObject)((JSONObject)((JSONObject)post.get("graphql"))).get("shortcode_media")).get("taken_at_timestamp"));
-	    	Date date=new Date(t.getTime());
-	    	post.put("LocalDate", "" + date);
+	    	newPost.put("NumberOfLikes",((JSONObject)((JSONObject)((JSONObject)((JSONObject)post.get("graphql"))).get("shortcode_media")).get("edge_media_preview_like")).get("count"));
+	    	
+	    	newPost.put("NumberOfComments",((JSONObject)((JSONObject)((JSONObject)((JSONObject)post.get("graphql"))).get("shortcode_media")).get("edge_media_to_parent_comment")).get("count"));
+	    	
+	    	newPost.put("Timestamp",((JSONObject)((JSONObject)((JSONObject)post.get("graphql"))).get("shortcode_media")).get("taken_at_timestamp"));
+	    	long timestamp = (long) ((JSONObject)((JSONObject)((JSONObject)post.get("graphql"))).get("shortcode_media")).get("taken_at_timestamp");	 
+	    	Timestamp t = new Timestamp(timestamp*1000);
+	    	Date date = new Date(t.getTime());
+	    	newPost.put("LocalDate", "" + date);
 	    	
 	    	JSONObject location = (JSONObject) ((JSONObject)((JSONObject)((JSONObject)post.get("graphql"))).get("shortcode_media")).get("location");
 	    	if(location!=null && location.containsKey("name"))
-	        	post.put("Location",((JSONObject)((JSONObject)((JSONObject)((JSONObject)post.get("graphql"))).get("shortcode_media")).get("location")).get("name"));
+	        	newPost.put("Location",((JSONObject)((JSONObject)((JSONObject)((JSONObject)post.get("graphql"))).get("shortcode_media")).get("location")).get("name"));
 	        else 
-	        	post.put("Location",null);
+	        	newPost.put("Location",null);
+	    	
+	    	filteredPosts.add(newPost);
 		}
 		
 		/* scrivo il file con i post filtrati */
 		Writer writer = null;	
 		try {
 		    writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(fileFiltered), "utf-8"));
-		    writer.write(posts.toJSONString());
+		    writer.write(filteredPosts.toJSONString());
 		    writer.flush();
 		} catch (IOException ex) {
 		    // Report
 		} finally {
 		   try {writer.close();} catch (Exception ex) {/*ignore*/}
 		}
+		
+		System.out.println("Filtraggio terminato.");
 	}
 	
-	public static void getInfo() throws IOException {
+	public static void elaborate() throws IOException, ParseException {
 		File data = new File("C:\\Users\\marti\\git\\TirocinioProtano\\data");
 		int numOfFile = 0;
 		int numOfPost = 0;
@@ -96,14 +115,16 @@ public class DataElaborator {
 							System.out.println(files[j]);
 							parsable = true; 
 							
+							//deleteCopies(files[j]);
+							filterInformations(files[j]);
+							
 							JSONArray posts = null;
 ;							try {
 								Reader reader = null;
 								try {
 								    reader = new BufferedReader(new InputStreamReader(new FileInputStream(files[j]), "utf-8"));
 								    JSONParser parser = new JSONParser();
-								    posts = (JSONArray) parser.parse(reader);	
-								    //DataElaborator.filterInformations(files[j], posts);								    
+								    posts = (JSONArray) parser.parse(reader);								    
 								} catch (IOException ex) {
 								    // Report
 								} finally {
@@ -123,9 +144,7 @@ public class DataElaborator {
 								parsable = false;
 								notParsable++;
 							}
-
-							
-														
+													
 							if(parsable)
 								numOfPost = numOfPost + posts.size();
 						}
@@ -134,15 +153,15 @@ public class DataElaborator {
 			}
 		}
 		
+		System.out.println("\n----- STATISTICHE: -----");
 		System.out.println("Numero di post: " + numOfPost);
 		System.out.println("Numero di file: " + numOfFile);
 		System.out.println("Non parsabili: " + notParsable);
 	}
 
+	
 	public static void main(String[] args) throws IOException, ParseException {
-		getInfo();
-	}
-	
-	
+		elaborate();
+	}	
 }
 
