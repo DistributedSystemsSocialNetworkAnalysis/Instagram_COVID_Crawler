@@ -1,23 +1,12 @@
-import org.json.simple.JSONObject;
-import org.json.simple.JSONArray;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
-import org.openqa.selenium.By;
-import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.NoSuchElementException;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.ui.ExpectedCondition;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
-
+import org.json.simple.*;
+import org.json.simple.parser.*;
+import org.openqa.selenium.*;
+import org.openqa.selenium.support.ui.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import java.io.*;
 import java.net.*;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
+
 
 public class Instagram {
     public static WebDriver driver;
@@ -83,6 +72,7 @@ public class Instagram {
     }
  
     
+    /* controlla che un elemento sia presente nella pagina web */
     public static boolean isElementPresent(By by){
         try{
             driver.findElement(by);
@@ -92,31 +82,7 @@ public class Instagram {
             return false;
         }
     }
-    
-    
-    /* leggo tutti gli hashtag salienti dal file hashtag.txt */
-    public static String[] readHashtags() throws IOException {
-    	String[] hashtags = new String[9];
-    	File f = new File("./hashtag.json");
-    	FileReader reader = null;
-    	
-    	try {
-    		reader = new FileReader(f);
-    	} catch(FileNotFoundException e) {
-    		e.printStackTrace();
-    	}
-    	
-    	BufferedReader br = new BufferedReader(reader);
-    	
-    	int i = 0;
-		String hashtag;
-		while((hashtag=br.readLine())!=null) {
-			hashtags[i]=hashtag;
-			i++;
-		}
-		
-		return hashtags;
-    }
+
     
     /* scarica i post associati alla ricerca di "hashtag" e li salva in un file */
     public static void downloadData(String hashtag) throws IOException, ParseException, InterruptedException {
@@ -136,10 +102,12 @@ public class Instagram {
 		
 		System.out.println("Post from hashtag: " + hashtag);
 		
-		/* finchÃ© non scade il timer per la ricerca e il download dei dati correlati all'hashtag */
+		/* finché non scade il timer per la ricerca oppure finché non ho almeno 500 post */
 		riga=1;
 		while(timer.isAlive() || numOfPosts%500 != 0) {
 				colonna=1;	
+				
+				/* lo scrolling si è bloccato: provo fino a 3 volte a sbloccarlo */
 				while(Instagram.loadPosts(driver)==false) {
 					System.err.println("Blocked scrolling");
 					failedAttempts++;
@@ -149,12 +117,14 @@ public class Instagram {
 					Instagram.unlockScroll();				
 				}
 				
+				/* ha fallito 3 volte, scrivo i dati che ho salvato in locale ed esco dal ciclo (passerà all'hashtag successivo) */
 				if(failedAttempts == 3) {
 					handler.writeData(posts,true);
 					break;
 				}
-									
-				System.out.println("---");
+					
+				/* scarico i post procedendo per riga */
+				System.out.println("---"); 
 				while(colonna!=4) {
 					try {		
 						String elementPath = "/html/body/div[1]/section/main/article/div[2]/div/div[" + riga + "]/div[" + colonna + "]/a";
@@ -199,12 +169,13 @@ public class Instagram {
     	
     	System.out.println("Post " + numOfPosts + ":" + post);
     }
-    
+ 
+	
 	public static boolean isParsable(JSONObject obj) {
 		JSONParser parser = new JSONParser();
-		
+
 		try {
-			JSONObject post = (JSONObject) parser.parse(obj.toJSONString());
+			parser.parse(obj.toJSONString());
 		} catch (Exception e) {
 			System.err.println("Errore di parsing: post scartato");
 			return false;
@@ -224,8 +195,9 @@ public class Instagram {
             return false;
         }
     }
+
 	
-	/* estraggo i dati utili in JSON */
+	/* ottengo il post in formato JSON tramite connessione HTTP */
     public static JSONObject getPostJson(String jsonUrl) throws IOException, MalformedURLException, ParseException {
     	URL url = new URL(jsonUrl);	
 		HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -236,9 +208,7 @@ public class Instagram {
 		
 		BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream(), "UTF-8"));		
 		String jsonString = br.readLine();
-		
-		
-		/* */
+
 		JSONParser parser = new JSONParser();		
 		JSONObject post = (JSONObject) parser.parse(jsonString);
 		
@@ -246,18 +216,17 @@ public class Instagram {
     }
     
     
-    /* funzione di scrolling dei post di Instagram (ricerca hashtag) */
+    /* funzione utile per lo sblocco dello scrolling */
     public static void unlockScroll() { 
     	try{
         	JavascriptExecutor js = (JavascriptExecutor) driver;
-        	//js.executeScript("window.scrollTo(0, document.body.scrollHeight)");
         	js.executeScript("window.scrollTo(0,-200)"); // a volte lo scrolling si blocca e per sbloccarlo basta tornare su e riscrollare
-        	//js.executeScript("window.scrollTo(0, document.body.scrollHeight)");
         }
         catch(Exception ignore){}
     }
+  
     
-    
+    /* funzione per il caricamente dei post */
     private static Boolean loadPosts(WebDriver driver) throws InterruptedException {
 		long lastHeight = (long) ((JavascriptExecutor) driver).executeScript("return document.body.scrollHeight");
 		
@@ -280,7 +249,8 @@ public class Instagram {
  
 		return true;
 	}
-    
+ 
+
     public static void searchAndDownload(String input, int num) {
     	String hashtag; 
     		    
@@ -308,10 +278,10 @@ public class Instagram {
 			}
 			
 			Instagram.backToHomePage();
-			//driver.findElement(By.xpath(Xpaths.input_search_bar)).sendKeys(input);
 		}
     }
 
+    
 	public static void backToHomePage() {
 		driver.get("https://www.instagram.com");
 	}

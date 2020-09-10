@@ -2,6 +2,7 @@ import java.io.*;
 import java.nio.file.*;
 import java.sql.Timestamp;
 import java.util.*;
+
 import org.json.simple.*;
 import org.json.simple.parser.*;
 
@@ -22,6 +23,7 @@ public class DataElaborator {
 		
 		System.out.println("Dimensione dopo il filtraggio: " + set.size());
 	}
+	
 	
 	@SuppressWarnings("unchecked")
 	public static void filterInformations(File f) throws IOException {
@@ -48,8 +50,12 @@ public class DataElaborator {
 			newPost.put("AccessibilityCaption", ((JSONObject)((JSONObject)((JSONObject)post.get("graphql"))).get("shortcode_media")).get("accessibility_caption"));
 	    	JSONArray captionText = ((JSONArray)((JSONObject)((JSONObject)((JSONObject)((JSONObject)post.get("graphql"))).get("shortcode_media")).get("edge_media_to_caption")).get("edges"));
 	    	
-	    	if(captionText.size()!=0)
-	    		newPost.put("CaptionText",((JSONObject)((JSONObject)((JSONArray)((JSONObject)((JSONObject)((JSONObject)((JSONObject)post.get("graphql"))).get("shortcode_media")).get("edge_media_to_caption")).get("edges")).get(0)).get("node")).get("text"));
+	    	if(captionText.size()!=0) {
+	    		String text = (String) ((JSONObject)((JSONObject)((JSONArray)((JSONObject)((JSONObject)((JSONObject)((JSONObject)post.get("graphql"))).get("shortcode_media")).get("edge_media_to_caption")).get("edges")).get(0)).get("node")).get("text");
+	    		newPost.put("CaptionText",text);
+	    		JSONArray hashtags = getRelatedHashtags(text); // parsing degli hashtag a partire dalla caption del post
+	    		newPost.put("Hashtags", hashtags);
+	    	}
 	    	else newPost.put("CaptionText",null);
 	    		
 	    	newPost.put("NumberOfLikes",((JSONObject)((JSONObject)((JSONObject)((JSONObject)post.get("graphql"))).get("shortcode_media")).get("edge_media_preview_like")).get("count"));
@@ -85,12 +91,11 @@ public class DataElaborator {
 		
 		System.out.println("Filtraggio terminato.");
 	}
+
 	
 	public static void elaborate() throws IOException, ParseException {
 		File data = new File("C:\\Users\\marti\\git\\TirocinioProtano\\data");
-		int numOfFile = 0;
-		int numOfPost = 0;
-		int notParsable = 0;
+		int numOfFile = 0, numOfPost = 0, notParsable = 0;
 		boolean parsable = true;
 		
 		if(data.isDirectory()) {
@@ -116,38 +121,19 @@ public class DataElaborator {
 							parsable = true; 
 							
 							//deleteCopies(files[j]);
-							filterInformations(files[j]);
+							if(!files[j].getName().contains("filtered"))
+								filterInformations(files[j]);
 							
-							JSONArray posts = null;
-;							try {
-								Reader reader = null;
-								try {
-								    reader = new BufferedReader(new InputStreamReader(new FileInputStream(files[j]), "utf-8"));
-								    JSONParser parser = new JSONParser();
-								    posts = (JSONArray) parser.parse(reader);								    
-								} catch (IOException ex) {
-								    // Report
-								} finally {
-								   try {reader.close();} catch (Exception ex) {/*ignore*/}
-								}
-				
-							} catch(Exception e) {
-								e.printStackTrace();
-								System.err.println("Errore: file " + files[j] + " non parsabile.");
-								
-								/* sposto il file non parsabile sul desktop per una successiva revisione */
-								Path temp = Files.move(Paths.get(files[j].getAbsolutePath()), Paths.get("C:\\Users\\marti\\Desktop\\" + files[j].getName())); 	  
-								if(temp != null) 
-									System.out.println("File renamed and moved successfully"); 
-								else System.out.println("Failed to move the file"); 
-								
+							int pars = isParsable(files[j]);
+							if(pars == -1) {
+								notParsable ++;
 								parsable = false;
-								notParsable++;
 							}
 													
 							if(parsable)
-								numOfPost = numOfPost + posts.size();
+								numOfPost = numOfPost + pars;
 						}
+						
 					}
 				}
 			}
@@ -158,7 +144,95 @@ public class DataElaborator {
 		System.out.println("Numero di file: " + numOfFile);
 		System.out.println("Non parsabili: " + notParsable);
 	}
+	
+	/*
+	public static JSONArray getRelatedHashtags(String caption) {
+		if(caption!=null && caption.contains("#")) {
+			HashSet<String> hashtags = new HashSet<String>();
+			int occ = caption.indexOf("#");
+			String cleanCaption = caption.substring(occ, caption.length());
+			String[] listOfHashtags = cleanCaption.split("#");
+			for(int i=0; i<listOfHashtags.length; i++) {				
+				if(!listOfHashtags[i].equals("")) {
+					String hashtag = listOfHashtags[i].substring(0, listOfHashtags[i].length()-1);
+					hashtag.replaceAll("\\s+","");
+					hashtags.add(hashtag);
+				}
+			}
+			
+			JSONArray output = new JSONArray();	
 
+			for(String s: hashtags) 
+				output.add(s);
+						
+			return output;
+		}
+		return null;
+	} */
+	
+	@SuppressWarnings("unchecked")
+	public static JSONArray getRelatedHashtags(String caption) {
+		if(caption!=null && caption.contains("#")) {
+			JSONArray hashtags = new JSONArray();
+			int occ = caption.indexOf("#");
+			String cleanCaption = caption.substring(occ, caption.length());
+			
+			int i = 0;
+			while(i < cleanCaption.length()) {
+				if(cleanCaption.charAt(i)=='#') {
+					int j = i+1;
+					while(j<cleanCaption.length() && !Character.isWhitespace(cleanCaption.charAt(j))) {
+						if(cleanCaption.charAt(j)=='#' & j!=i) {
+							j--;
+							break;
+						}
+							
+						j++;
+					}
+					
+					String hashtag = cleanCaption.substring(i, j);
+					if(hashtag.length()>1)
+						hashtags.add(hashtag);
+					System.out.println("Ho aggiunto " + hashtag);
+				}
+				
+				i++;
+			}			
+			return hashtags;
+		}		
+		return null;
+	}
+
+	
+	public static int isParsable(File f) throws IOException {
+		JSONArray posts = null;
+		try {
+			Reader reader = null;
+			try {
+			    reader = new BufferedReader(new InputStreamReader(new FileInputStream(f), "utf-8"));
+			    JSONParser parser = new JSONParser();
+			    posts = (JSONArray) parser.parse(reader);								    
+			} catch (IOException ex) {
+			    // Report
+			} finally {
+			   try {reader.close();} catch (Exception ex) {/*ignore*/}
+			}
+
+		} catch(Exception e) {
+			e.printStackTrace();
+			System.err.println("Errore: file " + f + " non parsabile.");
+			
+			/* sposto il file non parsabile sul desktop per una successiva revisione */
+			Path temp = Files.move(Paths.get(f.getAbsolutePath()), Paths.get("C:\\Users\\marti\\Desktop\\" + f.getName())); 	  
+			if(temp != null) 
+				System.out.println("File renamed and moved successfully"); 
+			else System.out.println("Failed to move the file"); 
+			
+			return -1;
+		}
+		
+		return posts.size();
+	}
 	
 	public static void main(String[] args) throws IOException, ParseException {
 		elaborate();

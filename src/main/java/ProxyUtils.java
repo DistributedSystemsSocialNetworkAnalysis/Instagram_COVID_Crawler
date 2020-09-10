@@ -1,13 +1,10 @@
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.*;
 import net.lightbody.bmp.BrowserMobProxy;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
 public class ProxyUtils {
-    public static boolean endedFollower=false;
-    public static boolean endedFollowing=false;
     public static boolean endedHashtag=false;
     public static boolean Limited=false;
     public static boolean interceptTagged=false;

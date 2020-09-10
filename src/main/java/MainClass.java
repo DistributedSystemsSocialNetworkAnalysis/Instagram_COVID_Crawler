@@ -4,7 +4,6 @@ import net.lightbody.bmp.proxy.CaptureType;
 import org.openqa.selenium.*;
 import org.openqa.selenium.firefox.*;
 import org.openqa.selenium.remote.CapabilityType;
-import java.io.IOException;
 import java.util.concurrent.TimeUnit;
  
 
