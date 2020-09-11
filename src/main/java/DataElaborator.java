@@ -91,6 +91,96 @@ public class DataElaborator {
 		
 		System.out.println("Filtraggio terminato.");
 	}
+	
+	
+	public static void countOccurrences() throws IOException {
+		File data = new File("C:\\Users\\marti\\git\\TirocinioProtano\\data");
+		HashMap<String,Integer> occurrences = new HashMap<String,Integer>();
+		
+		if(data.isDirectory()) {
+			File[] directories = data.listFiles();
+			
+			/* scorre le cartelle con date (giorno-mese-anno) */
+			for(int i=0; i < directories.length; i++) {
+				System.out.println("Entro nella cartella: " + directories[i].getName());
+				
+				if(directories[i].isDirectory()) {
+					File[] f = directories[i].listFiles();
+					
+					/* scorro le cartelle degli hashtag*/
+					for(int k=0; k < f.length; k++) {
+						System.out.println("Entro nella cartella: " + f[k].getName());
+									
+						File[] files = f[k].listFiles();					
+						/* scorro i singoli file */
+						for(int j=0; j<files.length; j++) {
+							
+							if(files[j].getName().contains("filtered")) {
+								/* parso il file */
+								Reader reader = null;
+								JSONArray posts = null;
+								try {
+								    reader = new BufferedReader(new InputStreamReader(new FileInputStream(files[j]), "utf-8"));
+								    JSONParser parser = new JSONParser();
+								    posts = (JSONArray) parser.parse(reader);	
+								} catch (Exception ex) {
+									ex.printStackTrace();
+								}
+														
+								for(int m=0; m<posts.size(); m++) {
+									JSONArray hashtags = (JSONArray) ((JSONObject)posts.get(m)).get("Hashtags");
+									if(hashtags!=null) {
+										for(int n=0; n<hashtags.size(); n++) {
+											if(occurrences.containsKey(hashtags.get(n))) {
+												occurrences.put( (String)hashtags.get(n), new Integer( occurrences.get((String)hashtags.get(n))+1 ) ) ;
+											} else occurrences.put((String)hashtags.get(n), new Integer(1));						
+										}
+									}
+								}
+							}
+							
+						}
+						
+					}
+				}
+			}
+		}
+		
+		File hashtagStatistics = new File("C:\\Users\\marti\\git\\TirocinioProtano\\statistics\\hashtags_statistics.txt");
+		if(!hashtagStatistics.exists())
+			hashtagStatistics.createNewFile();
+		
+		Writer writer = null;
+		try {
+		    writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(hashtagStatistics), "utf-8"));
+		    writer.flush();
+		} catch (IOException ex) {
+		    // Report
+		}
+		
+		writer.write("HASHTAG STATISTICS:\r\n");
+		writer.append("\r\n");
+		
+		//writer.append("+-------------------------------------+----------------+-------------+\n");
+	    //writer.append("|        Hashtag                      |      Number of occurrences   |\n");
+	    //writer.append("+-------------------------------------+----------------+-------------+\n");
+
+		
+	    
+	    for(String name: occurrences.keySet()) {
+	    	
+	    }
+	    
+		for (String name: occurrences.keySet()){
+            String key =name.toString();
+            int value = ((Integer)occurrences.get(name)).intValue();
+            //writer.append(String.format("%s                            %s            \r\n", key, value+""));
+            writer.append(String.format("%s       %s\r\n", key, value + ""));
+            System.out.println(key + " " + value);  
+		}
+		
+		writer.append("+--------------------------------------------------------+\n");
+	}
 
 	
 	public static void elaborate() throws IOException, ParseException {
@@ -235,7 +325,9 @@ public class DataElaborator {
 	}
 	
 	public static void main(String[] args) throws IOException, ParseException {
-		elaborate();
+		//elaborate();
+		
+		countOccurrences();
 	}	
 }
 
