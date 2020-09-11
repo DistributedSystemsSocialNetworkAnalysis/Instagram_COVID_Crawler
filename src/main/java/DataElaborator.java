@@ -95,7 +95,8 @@ public class DataElaborator {
 	
 	public static void countOccurrences() throws IOException {
 		File data = new File("C:\\Users\\marti\\git\\TirocinioProtano\\data");
-		HashMap<String,Integer> occurrences = new HashMap<String,Integer>();
+		HashMap<String,Integer> hashtagOccurrences = new HashMap<String,Integer>();
+		HashMap<String,Integer> locationOccurrences = new HashMap<String,Integer>();
 		
 		if(data.isDirectory()) {
 			File[] directories = data.listFiles();
@@ -129,11 +130,21 @@ public class DataElaborator {
 														
 								for(int m=0; m<posts.size(); m++) {
 									JSONArray hashtags = (JSONArray) ((JSONObject)posts.get(m)).get("Hashtags");
+									String location = (String) ((JSONObject)posts.get(m)).get("Location");
+									
+									if(location!=null) {
+										if(locationOccurrences.containsKey(location)) {
+											locationOccurrences.put(location, new Integer(locationOccurrences.get(location)+1)) ;
+										} 
+										else locationOccurrences.put(location, new Integer(1));	
+									}
+									
 									if(hashtags!=null) {
 										for(int n=0; n<hashtags.size(); n++) {
-											if(occurrences.containsKey(hashtags.get(n))) {
-												occurrences.put( (String)hashtags.get(n), new Integer( occurrences.get((String)hashtags.get(n))+1 ) ) ;
-											} else occurrences.put((String)hashtags.get(n), new Integer(1));						
+											if(hashtagOccurrences.containsKey(hashtags.get(n))) {
+												hashtagOccurrences.put( (String)hashtags.get(n), new Integer( hashtagOccurrences.get((String)hashtags.get(n))+1 ) ) ;
+											} 
+											else hashtagOccurrences.put((String)hashtags.get(n), new Integer(1));						
 										}
 									}
 								}
@@ -147,39 +158,41 @@ public class DataElaborator {
 		}
 		
 		File hashtagStatistics = new File("C:\\Users\\marti\\git\\TirocinioProtano\\statistics\\hashtags_statistics.txt");
+		File locationStatistics = new File("C:\\Users\\marti\\git\\TirocinioProtano\\statistics\\locations_statistics.txt");
+		
 		if(!hashtagStatistics.exists())
 			hashtagStatistics.createNewFile();
 		
-		Writer writer = null;
+		if(!locationStatistics.exists())
+			locationStatistics.createNewFile();
+		
+		Writer writer1 = null, writer2 = null;
 		try {
-		    writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(hashtagStatistics), "utf-8"));
-		    writer.flush();
+		    writer1 = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(hashtagStatistics), "utf-8"));
+		    writer2 = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(locationStatistics), "utf-8"));
 		} catch (IOException ex) {
 		    // Report
 		}
 		
-		writer.write("HASHTAG STATISTICS:\r\n");
-		writer.append("\r\n");
-		
-		//writer.append("+-------------------------------------+----------------+-------------+\n");
-	    //writer.append("|        Hashtag                      |      Number of occurrences   |\n");
-	    //writer.append("+-------------------------------------+----------------+-------------+\n");
-
-		
+		writer1.write("HASHTAG STATISTICS:\r\n");
+		writer1.append("\r\n");
 	    
-	    for(String name: occurrences.keySet()) {
-	    	
-	    }
-	    
-		for (String name: occurrences.keySet()){
-            String key =name.toString();
-            int value = ((Integer)occurrences.get(name)).intValue();
-            //writer.append(String.format("%s                            %s            \r\n", key, value+""));
-            writer.append(String.format("%s       %s\r\n", key, value + ""));
+		for (String name: hashtagOccurrences.keySet()){
+            String key = name.toString();
+            int value = ((Integer)hashtagOccurrences.get(name)).intValue();
+            writer1.append(String.format("%s       %s\r\n", key, value + ""));
             System.out.println(key + " " + value);  
 		}
 		
-		writer.append("+--------------------------------------------------------+\n");
+		writer2.write("LOCATION STATISTICS:\r\n");
+		writer2.append("\r\n");
+	    
+		for (String loc: locationOccurrences.keySet()){
+            String key = loc.toString();
+            int value = ((Integer)locationOccurrences.get(loc)).intValue();
+            writer2.append(String.format("%s       %s\r\n", key, value + ""));
+            System.out.println(key + " " + value);  
+		}
 	}
 
 	
@@ -235,31 +248,6 @@ public class DataElaborator {
 		System.out.println("Non parsabili: " + notParsable);
 	}
 	
-	/*
-	public static JSONArray getRelatedHashtags(String caption) {
-		if(caption!=null && caption.contains("#")) {
-			HashSet<String> hashtags = new HashSet<String>();
-			int occ = caption.indexOf("#");
-			String cleanCaption = caption.substring(occ, caption.length());
-			String[] listOfHashtags = cleanCaption.split("#");
-			for(int i=0; i<listOfHashtags.length; i++) {				
-				if(!listOfHashtags[i].equals("")) {
-					String hashtag = listOfHashtags[i].substring(0, listOfHashtags[i].length()-1);
-					hashtag.replaceAll("\\s+","");
-					hashtags.add(hashtag);
-				}
-			}
-			
-			JSONArray output = new JSONArray();	
-
-			for(String s: hashtags) 
-				output.add(s);
-						
-			return output;
-		}
-		return null;
-	} */
-	
 	@SuppressWarnings("unchecked")
 	public static JSONArray getRelatedHashtags(String caption) {
 		if(caption!=null && caption.contains("#")) {
@@ -291,6 +279,18 @@ public class DataElaborator {
 			return hashtags;
 		}		
 		return null;
+	}
+	
+	
+	public static void getAccessibilityCaption(String accessibility) {
+		if(accessibility!=null && accessibility.length()!=0) {
+			
+		}
+		
+	}
+	
+	public static void getLocations(String location) {
+		
 	}
 
 	
