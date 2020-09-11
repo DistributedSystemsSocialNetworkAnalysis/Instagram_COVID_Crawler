@@ -177,9 +177,10 @@ public class DataElaborator {
 		writer1.write("HASHTAG STATISTICS:\r\n");
 		writer1.append("\r\n");
 	    
-		for (String name: hashtagOccurrences.keySet()){
+		HashMap<String,Integer> map1 = (HashMap<String, Integer>) HashMapSorting.sortByValue(hashtagOccurrences);
+		for (String name: map1.keySet()){
             String key = name.toString();
-            int value = ((Integer)hashtagOccurrences.get(name)).intValue();
+            int value = ((Integer)map1.get(name)).intValue();
             writer1.append(String.format("%s       %s\r\n", key, value + ""));
             System.out.println(key + " " + value);  
 		}
@@ -187,9 +188,10 @@ public class DataElaborator {
 		writer2.write("LOCATION STATISTICS:\r\n");
 		writer2.append("\r\n");
 	    
-		for (String loc: locationOccurrences.keySet()){
+		HashMap<String,Integer> map2 = (HashMap<String, Integer>) HashMapSorting.sortByValue(locationOccurrences);
+		for (String loc: map2.keySet()){
             String key = loc.toString();
-            int value = ((Integer)locationOccurrences.get(loc)).intValue();
+            int value = ((Integer)map2.get(loc)).intValue();
             writer2.append(String.format("%s       %s\r\n", key, value + ""));
             System.out.println(key + " " + value);  
 		}
