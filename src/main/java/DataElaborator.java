@@ -7,6 +7,28 @@ import org.json.simple.*;
 import org.json.simple.parser.*;
 
 public class DataElaborator {
+	static File hashtagStatistics;
+	static File locationStatistics;
+	static File accessibilityStatistics;
+	static File data;
+	
+	
+	public DataElaborator() throws IOException {
+		hashtagStatistics = new File("C:\\Users\\marti\\git\\TirocinioProtano\\statistics\\hashtags_statistics.txt");
+		locationStatistics = new File("C:\\Users\\marti\\git\\TirocinioProtano\\statistics\\locations_statistics.txt");
+		accessibilityStatistics = new File("C:\\Users\\marti\\git\\TirocinioProtano\\statistics\\accessibility_statistics.txt");
+		data = new File("C:\\Users\\marti\\git\\TirocinioProtano\\data");
+		
+		if(!hashtagStatistics.exists())
+			hashtagStatistics.createNewFile();
+		
+		if(!locationStatistics.exists())
+			locationStatistics.createNewFile();
+		
+		if(!accessibilityStatistics.exists())
+			accessibilityStatistics.createNewFile();
+	}
+	
 	
 	public static void deleteCopies(File data) throws IOException, ParseException {
 		FileReader fr = new FileReader(data);
@@ -93,8 +115,7 @@ public class DataElaborator {
 	}
 	
 	
-	public static void countOccurrences() throws IOException {
-		File data = new File("C:\\Users\\marti\\git\\TirocinioProtano\\data");
+	public void countOccurrences() throws IOException {
 		HashMap<String,Integer> hashtagOccurrences = new HashMap<String,Integer>();
 		HashMap<String,Integer> locationOccurrences = new HashMap<String,Integer>();
 		
@@ -157,26 +178,16 @@ public class DataElaborator {
 			}
 		}
 		
-		File hashtagStatistics = new File("C:\\Users\\marti\\git\\TirocinioProtano\\statistics\\hashtags_statistics.txt");
-		File locationStatistics = new File("C:\\Users\\marti\\git\\TirocinioProtano\\statistics\\locations_statistics.txt");
-		
-		if(!hashtagStatistics.exists())
-			hashtagStatistics.createNewFile();
-		
-		if(!locationStatistics.exists())
-			locationStatistics.createNewFile();
-		
 		Writer writer1 = null, writer2 = null;
 		try {
 		    writer1 = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(hashtagStatistics), "utf-8"));
 		    writer2 = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(locationStatistics), "utf-8"));
 		} catch (IOException ex) {
-		    // Report
+		    ex.printStackTrace();
 		}
 		
 		writer1.write("HASHTAG STATISTICS:\r\n");
-		writer1.append("\r\n");
-	    
+		writer1.append("\r\n");	    
 		HashMap<String,Integer> map1 = (HashMap<String, Integer>) HashMapSorting.sortByValue(hashtagOccurrences);
 		for (String name: map1.keySet()){
             String key = name.toString();
@@ -184,10 +195,10 @@ public class DataElaborator {
             writer1.append(String.format("%s       %s\r\n", key, value + ""));
             System.out.println(key + " " + value);  
 		}
+
 		
 		writer2.write("LOCATION STATISTICS:\r\n");
 		writer2.append("\r\n");
-	    
 		HashMap<String,Integer> map2 = (HashMap<String, Integer>) HashMapSorting.sortByValue(locationOccurrences);
 		for (String loc: map2.keySet()){
             String key = loc.toString();
@@ -199,7 +210,6 @@ public class DataElaborator {
 
 	
 	public static void elaborate() throws IOException, ParseException {
-		File data = new File("C:\\Users\\marti\\git\\TirocinioProtano\\data");
 		int numOfFile = 0, numOfPost = 0, notParsable = 0;
 		boolean parsable = true;
 		
@@ -224,8 +234,7 @@ public class DataElaborator {
 						for(int j=0; j<files.length; j++) {
 							System.out.println(files[j]);
 							parsable = true; 
-							
-							//deleteCopies(files[j]);
+
 							if(!files[j].getName().contains("filtered"))
 								filterInformations(files[j]);
 							
@@ -249,6 +258,7 @@ public class DataElaborator {
 		System.out.println("Numero di file: " + numOfFile);
 		System.out.println("Non parsabili: " + notParsable);
 	}
+
 	
 	@SuppressWarnings("unchecked")
 	public static JSONArray getRelatedHashtags(String caption) {
@@ -265,8 +275,7 @@ public class DataElaborator {
 						if(cleanCaption.charAt(j)=='#' & j!=i) {
 							j--;
 							break;
-						}
-							
+						}							
 						j++;
 					}
 					
@@ -284,16 +293,137 @@ public class DataElaborator {
 	}
 	
 	
-	public static void getAccessibilityCaption(String accessibility) {
-		if(accessibility!=null && accessibility.length()!=0) {
-			
+	public void getAccessibilityCaptions() throws IOException {
+		ArrayList<String> captions = new ArrayList<String>();
+		//ArrayList<String> captionsNonAscii = new ArrayList<String>();
+		int photos = 0, videos = 0, people = 0, text = 0, out = 0, in = 0, total = 0;
+		//int notascii = 0;
+		
+		if(data.isDirectory()) {
+			File[] directories = data.listFiles();
+			/* scorre le cartelle con date (giorno-mese-anno) */
+			for(int i=0; i < directories.length; i++) {
+				System.out.println("Entro nella cartella: " + directories[i].getName());
+				
+				if(directories[i].isDirectory()) {
+					File[] f = directories[i].listFiles();
+					
+					/* scorro le cartelle degli hashtag*/
+					for(int k=0; k < f.length; k++) {
+						System.out.println("Entro nella cartella: " + f[k].getName());
+									
+						File[] files = f[k].listFiles();							
+						/* scorro i singoli file */
+						for(int j=0; j<files.length; j++) {
+							if(files[j].getName().contains("filtered")) {
+								/* parso il file */
+								Reader reader = null;
+								JSONArray posts = null;
+								try {
+								    reader = new BufferedReader(new InputStreamReader(new FileInputStream(files[j]), "utf-8"));
+								    JSONParser parser = new JSONParser();
+								    posts = (JSONArray) parser.parse(reader);	
+								} catch (Exception ex) {
+									ex.printStackTrace();
+								}
+										
+								for(int m=0; m<posts.size(); m++) {
+									total++;
+									String caption = (String) ((JSONObject)posts.get(m)).get("AccessibilityCaption");
+									
+									if(caption!= null) {
+										/*
+										if(!caption.matches("\\A\\p{ASCII}*\\z")) {
+											notascii++;
+											System.out.println("NON ASCII: " + caption);
+											captionsNonAscii.add(caption);
+											break;
+										} */
+										if(caption.contains("Photo"))
+											photos++;
+										if(caption.contains("Video"))
+											videos++; 
+										if(caption.contains("people") || caption.contains("person"))
+											people++;
+										if(caption.contains("text")) {
+											/*
+											if(caption.contains("text that says")) {
+												int index = caption.indexOf("says");
+												String s = caption.substring(index+5,caption.length());
+												System.out.println("TESTO: " + s);
+												captions.add(s);
+											} */
+											text++; 
+										}
+											
+										if(caption.contains("indoor"))
+											in++;										
+										if(caption.contains("outdoor"))
+											out++;
+										
+										if(caption.contains("Image may contain:")) {
+											String[] s = caption.split(":");
+											String cleanCaption;
+											if(s[1].length()!=0) {
+												cleanCaption = s[1].substring(1, s[1].length());
+												captions.add(cleanCaption);
+											} else captions.add(caption);
+										} else captions.add(caption);
+									} 
+								}
+								
+								
+							}
+							
+						}
+					}
+				}
+			}
 		}
 		
+		Writer writer = null;
+		try {
+			writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(accessibilityStatistics), "utf-8"));
+		} catch (IOException ex) {
+			ex.printStackTrace();
+		}
+		
+		writer.write("---- ACCESSIBILITY STATISTICS: ----\r\n");
+		writer.append("\r\n");
+		writer.append("Number of media (total): " + total + "\r\n");
+		writer.append("Number of media with accessibility caption: " + captions.size() + "\r\n");		
+		writer.append("Number of media with people: " + people + "\r\n");
+		writer.append("Number of media with text: " + text + "\r\n");
+		writer.append("Number of media taken outdoor: " + out + "\r\n");
+		writer.append("Number of media taken indoor: " + in + "\r\n");
+		writer.append("Number of photos: " + photos + "\r\n");
+		writer.append("Number of videos: " + videos + "\r\n");
+		//writer.append("Number of captions not ASCII: " + notascii + "\r\n");
+		writer.append("\r\n");
+		
+		for(String c: captions) {
+			try {
+				writer.append(c + "\r\n");
+				writer.flush();
+			} catch(Exception e) {
+				e.printStackTrace();
+			}
+		}
+		
+		/*
+		writer.append("\r\n");
+		writer.append("[NOT ASCII CAPTIONS:]\r\n");
+		for(String c: captionsNonAscii) {
+			try {
+				writer.append(c + "\r\n");
+				writer.flush();
+				//System.out.println(c);
+			} catch(Exception e) {
+				e.printStackTrace();
+			}
+		} */
 	}
 	
-	public static void getLocations(String location) {
-		
-	}
 
 	
 	public static int isParsable(File f) throws IOException {
@@ -327,9 +457,10 @@ public class DataElaborator {
 	}
 	
 	public static void main(String[] args) throws IOException, ParseException {
-		//elaborate();
+		DataElaborator elab = new DataElaborator();
+		//elab.countOccurrences(); // statistiche su luoghi e hashtags
 		
-		countOccurrences();
+		elab.getAccessibilityCaptions();
 	}	
 }
 
