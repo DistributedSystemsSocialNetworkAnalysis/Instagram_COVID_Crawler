@@ -103,7 +103,6 @@ public class HashtagGraphCreator {
 		//Iterate through each rows one by one
 		 Iterator<Row> rowIterator = sheet.iterator();
 		 while (rowIterator.hasNext()) {
-			 //System.out.println("MIAO!");
 			 Row row = rowIterator.next();
 			 
 			 if(row.getRowNum()!=0) {		
