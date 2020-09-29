@@ -18,6 +18,26 @@
 	</dependency>
 	
 	<dependency>
+    	<groupId>org.apache.poi</groupId>
+    	<artifactId>poi-ooxml</artifactId>
+    	<version>4.1.2</version>
+	</dependency>
+	
+	<dependency>
+    	<groupId>org.springframework.webflow</groupId>
+    	<artifactId>spring-webflow</artifactId>
+    	<version>2.5.1.RELEASE</version>
+	</dependency>
+	
+	
+	<dependency>
+    	<groupId>org.netbeans.api</groupId>
+    	<artifactId>org-openide-util</artifactId>
+    	<version>RELEASE121</version>
+	</dependency>
+	
+	
+	<dependency>
     	<groupId>net.java.dev.jna</groupId>
     	<artifactId>jna-platform</artifactId>
     	<version>5.1.0</version>
@@ -48,18 +68,6 @@
 	</dependency>
 	
 	<dependency>
-    	<groupId>org.apache.commons</groupId>
-    	<artifactId>commons-lang3</artifactId>
-    	<version>3.10</version>
-	</dependency>
-	
-	<dependency>
-   		<groupId>org.apache.httpcomponents</groupId>
-   		<artifactId>httpclient</artifactId>
-   		<version>4.5.12</version>
-	</dependency>
-	
-	<dependency>
     	<groupId>org.seleniumhq.selenium</groupId>
     	<artifactId>selenium-chrome-driver</artifactId>
     	<version>3.141.59</version>
@@ -87,6 +95,12 @@
     	<groupId>org.seleniumhq.selenium</groupId>
     	<artifactId>selenium-api</artifactId>
     	<version>3.141.59</version>
+	</dependency>
+	
+	<dependency>
+    	<groupId>com.opencsv</groupId>
+    	<artifactId>opencsv</artifactId>
+    	<version>5.2</version>
 	</dependency>
 	
 	<dependency>
