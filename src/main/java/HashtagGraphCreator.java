@@ -100,12 +100,14 @@ public class HashtagGraphCreator {
 		XSSFSheet sheet = workbook.getSheetAt(0);
 		int occ = 0;
 		 
-		//Iterate through each rows one by one
+		// scorro il file per riga	
 		 Iterator<Row> rowIterator = sheet.iterator();
 		 while (rowIterator.hasNext()) {
 			 Row row = rowIterator.next();
 			 
-			 if(row.getRowNum()!=0) {		
+			 // salto la riga con gli header
+			 if(row.getRowNum()!=0) { 
+				 // ho raggiunto la riga contenente l'hashtag che sto cercando
 			     if(((String)row.getCell(1).getStringCellValue()).equals(hashtag)) {
 			    	 occ = (int) row.getCell(0).getNumericCellValue();
 			    	 System.out.println("L'hashtag " + hashtag + " occorre " + occ + " volte.");
@@ -118,58 +120,55 @@ public class HashtagGraphCreator {
 	}
 	
 	
+	/* funzione che filtra gli hashtag non interessanti */
 	public static ArrayList<String> filterHashtags(JSONArray hashtags) throws IOException {
 		ArrayList<String> ht = new ArrayList<String>();
 		for(int h=0; h<hashtags.size(); h++) {
-			/*
-			if(fixedHashtags.contains((String)hashtags.get(h))) {
-				System.out.println("Rimuovo l'hashtag: " + hashtags.get(h));
-				hashtags.remove(h);			
-			} else if(occurrences((String)hashtags.get(h)) < 500) {
-				
-				hashtags.remove(h);
-			} */
-			
+			// se l'hashtag non fa parte di quelli coinvolti nella ricerca dati
 			if(!fixedHashtags.contains((String)hashtags.get(h))) {	
 				System.out.println("Non è contenuto in fixedHashtag: " + hashtags.get(h));
+				// se occorre più di 500 volte 
 				if(occurrences((String)hashtags.get(h)) >= 500) {
 					System.out.println("AGGIUNTO: " + hashtags.get(h));
 					ht.add((String)hashtags.get(h));
-				}
+				} else System.out.println("Rimuovo l'hashtag: " + hashtags.get(h) + " poiché poco diffuso.");
 			}				
-			else System.out.println("Rimuovo l'hashtag: " + hashtags.get(h));
+			else System.out.println("Rimuovo l'hashtag: " + hashtags.get(h) + " poiché già coinvolto nella ricerca.");
 		}
 
 		return ht;
 	}
 
 	
+	/* crea i nodi del grafo basandosi sulla lista degli hashtag del post corrente */
 	public static void createNodes(ArrayList<String> ht) throws IOException {
-		for(int h=0; h<ht.size(); h++) {
+		for(int h=0; h < ht.size(); h++) {
 			Node n = graphModel.factory().newNode("n" + ID);
 			ID++;
 			n.setLabel((String) ht.get(h));
-			if(!undirectedGraph.contains(n))
+			if(!undirectedGraph.contains(n)) {
 				undirectedGraph.addNode(n);	
-			System.out.println("Aggiunto nodo con etichetta: " + n.getLabel());					
+				System.out.println("Aggiunto nodo con etichetta: " + n.getLabel());		
+			} else ID--; // non ho inserito il nodo che ho dichiarato sopra, quindi decremento ID
 		}
 		System.out.println(ht.size());
 		System.out.println("DIMENSIONE:      " + undirectedGraph.getNodes().toArray().length);
 	}
 	
 	
-	/* hashtags = hashtags di un post */
+	/* crea gli archi del grafo basandosi sugli hashtag contenuti nel post */
 	public static void createEdges(ArrayList<String> ht) {
 		Node[] nodes1 = undirectedGraph.getNodes().toArray();
-		for(int i = 0; i<nodes1.length; i++) {	
+		// scorro i nodi
+		for(int i = 0; i < nodes1.length; i++) {	
 			Node n1 = nodes1[i];
 			Node[] nodes2 = undirectedGraph.getNodes().toArray();
-			for(int j = 0; j<nodes2.length; j++) {
+			// per ogni nodo scorro la stessa lista dei nodi (ignorando quello uguale) e creo un arco
+			for(int j = 0; j < nodes2.length; j++) {
 				Node n2 = nodes2[j];
 				if(n1!=n2) {
-					Edge e = graphModel.factory().newEdge(n1, n2, 1, false);
+					Edge e = graphModel.factory().newEdge(n1, n2, 1, false); // TO DO: peso degli archi!
 					undirectedGraph.addEdge(e);
-					//System.out.println("Aggiunto arco: " + n1.getLabel() + " -> " + n2.getLabel());
 				}
 			}				
 		}
