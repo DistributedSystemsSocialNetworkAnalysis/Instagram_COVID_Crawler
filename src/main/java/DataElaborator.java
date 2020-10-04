@@ -252,7 +252,7 @@ public class DataElaborator {
 		writer1.append("\r\n");	
 		
 		TableFormatter formatter1 = new TableFormatter("hashtags", new String[] {"weight", "word"});
-		formatter1.fillTable(map1);
+		formatter1.fillTable1(map1);
 		for (String name: map1.keySet()){
             String key = name.toString(); 
             int value = ((Integer)map1.get(name)).intValue();
@@ -264,7 +264,7 @@ public class DataElaborator {
 		writer2.append("\r\n");
 		HashMap<String,Integer> map2 = (HashMap<String, Integer>) HashMapSorting.sortByValue(locationOccurrences);
 		TableFormatter formatter2 = new TableFormatter("locations", new String[] {"occurrences", "location"});
-		formatter2.fillTable(map2);
+		formatter2.fillTable1(map2);
 		for (String loc: map2.keySet()){
             String key = loc.toString();
             int value = ((Integer)map2.get(loc)).intValue();
@@ -276,7 +276,7 @@ public class DataElaborator {
 		writer3.append("\r\n");
 		HashMap<String,Integer> map3 = (HashMap<String, Integer>) HashMapSorting.sortByValue(ownerOccurrences);
 		TableFormatter formatter3 = new TableFormatter("users", new String[] {"posts", "username"});
-		formatter3.fillTable(map3);
+		formatter3.fillTable1(map3);
 		for (String owner: map3.keySet()){
             String key = owner.toString();
             int value = ((Integer)map3.get(owner)).intValue();
@@ -286,7 +286,7 @@ public class DataElaborator {
 		
 		HashMap<String,Integer> map4 = (HashMap<String, Integer>) HashMapSorting.sortByValue(tokenOccurrences);
 		TableFormatter formatter4 = new TableFormatter("token", new String[] {"occurrences", "token"});
-		formatter4.fillTable(map4);
+		formatter4.fillTable1(map4);
 	}
 	
 	
@@ -585,7 +585,7 @@ public class DataElaborator {
 		
 		HashMap<String,Integer> map = (HashMap<String, Integer>) HashMapSorting.sortByValue(words);
 		TableFormatter formatter = new TableFormatter("words", new String[]{"occurrences","word"});
-		formatter.fillTable(map);
+		formatter.fillTable1(map);
 		
 		Writer writer = null;
 		try {

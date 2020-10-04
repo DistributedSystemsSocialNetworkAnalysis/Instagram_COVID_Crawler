@@ -26,12 +26,12 @@ public class TableFormatter {
 	}
 
 	
-	public void fillTable(HashMap<String, Integer> map1) {
+	public void fillTable1(HashMap<String, Integer> map1) {
 		int i = 1;
 		System.out.println("Riempio la tabella excel");
 		for(String key: map1.keySet()) {
 			int val  = ((Integer)map1.get(key)).intValue();
-			if(val>=100) {
+			if(val>=1000) {
 				Row row = sheet.createRow(i); // creo una riga
 				Cell cell1 = row.createCell(0); // prima cella della riga appena creata	
 				cell1.setCellValue(val);
@@ -48,10 +48,33 @@ public class TableFormatter {
 	}
 	
 	
+	public void fillTable2(HashMap<String,String> edges) {
+		int i = 1;
+		for(String idSource: edges.keySet()) {
+			String idDest  = edges.get(idSource);
+			
+			Row row = sheet.createRow(i); // creo una riga
+			Cell cell1 = row.createCell(0); // prima cella = id sorgente
+			cell1.setCellValue(idSource);
+				
+			cell1 = row.createCell(1); // seconda cella = id destinazione
+			cell1.setCellValue(idDest);
+	
+			System.out.println("Ho inserito il record: " + idSource + ", " + idDest);
+			i++;	
+		}
+	}
+	
+	
+	public File getFile() {
+		return this.excel;
+	}
+	
+
 	public void writeTable() {
 		try {
 			FileOutputStream outputStream = new FileOutputStream(excel);
-			System.out.println("Scrivo la tabella su file:");
+			System.out.println("Scrivo la tabella su file.");
 			workbook.write(outputStream);
 			workbook.close();
 		} catch(Exception e) {
