@@ -117,6 +117,12 @@
 	</dependency>
 	
 	<dependency>
+    	<groupId>it.uniroma1.dis.wsngroup.gexf4j</groupId>
+    	<artifactId>gexf4j</artifactId>
+    	<version>1.0.0</version>
+	</dependency>
+	
+	<dependency>
     	<groupId>org.slf4j</groupId>
     	<artifactId>slf4j-api</artifactId>
     	<version>1.7.30</version>

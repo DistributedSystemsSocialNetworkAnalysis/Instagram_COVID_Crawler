@@ -17,6 +17,7 @@ public class HashtagGraphCreator {
 	static HashMap<String,Integer> occurrences = new HashMap<String,Integer>();
 	static HashMap<String,String> edges = new HashMap<String,String>();
 	static File dataDir = new File("C:\\Users\\marti\\git\\TirocinioProtano\\data");
+	static File graphFile = new File("C:\\Users\\marti\\git\\TirocinioProtano\\statistics\\hashtags_graph");
 	static GraphModel graphModel;
 	static UndirectedGraph undirectedGraph;
 	static Workspace workspace;
@@ -31,6 +32,10 @@ public class HashtagGraphCreator {
 		graphModel = Lookup.getDefault().lookup(GraphController.class).getGraphModel();
 		undirectedGraph = graphModel.getUndirectedGraph();
 		ID = 0;
+		
+		if(!graphFile.exists())
+			graphFile.createNewFile();
+		
 		getOccurrences(); // recupero le occorrenze degli hashtag
 	}
 	
@@ -154,7 +159,7 @@ public class HashtagGraphCreator {
 			if(!fixedHashtags.contains((String)hashtags.get(h))) {	
 				//System.out.println("Non è contenuto in fixedHashtag: " + hashtags.get(h));
 				// se occorre più di 1000 volte 
-				if(occurrences.containsKey(hashtags.get(h)) && occurrences.get(hashtags.get(h)) >= 1000) {
+				if(occurrences.containsKey(hashtags.get(h)) && occurrences.get(hashtags.get(h)) >= 2000) {
 					//System.out.println("AGGIUNTO: " + hashtags.get(h));
 					ht.add((String)hashtags.get(h));
 				} //else System.out.println("Rimuovo l'hashtag: " + hashtags.get(h) + " poiché poco diffuso.");
@@ -212,7 +217,7 @@ public class HashtagGraphCreator {
 				Node n2 = it2.next();
 				if(n1.getId()!=n2.getId()) {				
 					edges.put((String)n1.getId(), (String)n2.getId());
-					System.out.println(n1.getLabel() + " - " + n2.getLabel());
+					//System.out.println(n1.getLabel() + " - " + n2.getLabel());
 				}
 			}				
 		}	
@@ -232,7 +237,7 @@ public class HashtagGraphCreator {
 	/* esporta il grafo su un file */
 	public static void exportGraph() {
 		ExportController ec = Lookup.getDefault().lookup(ExportController.class);
-		File graphFile = new File("C:\\Users\\marti\\git\\TirocinioProtano\\statistic\\hashtags_graph.gexf");
+		
 		try {
 			ec.exportFile(graphFile);
 		} catch (IOException ex) {
