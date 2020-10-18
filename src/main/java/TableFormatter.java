@@ -2,6 +2,8 @@ import java.io.*;
 import java.util.HashMap;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.gephi.graph.api.Node;
+import org.gephi.graph.api.UndirectedGraph;
 
 
 public class TableFormatter {
@@ -30,17 +32,22 @@ public class TableFormatter {
 		int i = 1;
 		System.out.println("Riempio la tabella excel");
 		for(String key: map1.keySet()) {
-			int val  = ((Integer)map1.get(key)).intValue();
-			if(val>=1000) {
-				Row row = sheet.createRow(i); // creo una riga
-				Cell cell1 = row.createCell(0); // prima cella della riga appena creata	
-				cell1.setCellValue(val);
-				
-				cell1 = row.createCell(1);
-				cell1.setCellValue(key);
-	
-				System.out.println("Ho inserito il record: " + val + ", " + key);
-				i++;
+			try {
+				int val  = ((Integer)map1.get(key)).intValue();
+				val = (int)Math.log(val);
+				//if(val>=100) {
+					Row row = sheet.createRow(i); // creo una riga
+					Cell cell1 = row.createCell(0); // prima cella della riga appena creata	
+					cell1.setCellValue(val);
+					
+					cell1 = row.createCell(1);
+					cell1.setCellValue(key);
+		
+					System.out.println("Ho inserito il record: " + val + ", " + key);
+					i++;
+				//}
+			} catch(IllegalArgumentException e) {
+				break;
 			}
 		}
 		
@@ -48,7 +55,7 @@ public class TableFormatter {
 	}
 	
 	
-	public void fillTable2(HashMap<String,String> edges) {
+	public void fillTable2(UndirectedGraph undirectedGraph, HashMap<String,String> edges) {
 		int i = 1;
 		for(String idSource: edges.keySet()) {
 			String idDest  = edges.get(idSource);
@@ -59,8 +66,17 @@ public class TableFormatter {
 				
 			cell1 = row.createCell(1); // seconda cella = id destinazione
 			cell1.setCellValue(idDest);
+			
+			Node n1 = undirectedGraph.getNode(idSource);
+			Node n2 = undirectedGraph.getNode(idDest);
 	
-			System.out.println("Ho inserito il record: " + idSource + ", " + idDest);
+			try {
+			System.out.println("Ho inserito il record: " + "(" + n1.getLabel() + " , " + idSource+ ")" + " - " + "(" + n2.getLabel() + " , " + idDest + ")");
+			} catch(NullPointerException e) {
+				System.err.println(n1);
+				System.err.println(n2);
+			}
+			
 			i++;	
 		}
 	}

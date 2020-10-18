@@ -1,6 +1,8 @@
 import org.openide.util.*;
 import java.io.*;
 import java.util.*;
+
+import org.apache.commons.math3.stat.descriptive.rank.Percentile;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.*;
 import org.gephi.graph.api.*;
@@ -11,17 +13,28 @@ import org.json.simple.*;
 import org.json.simple.parser.JSONParser;
 
 
+/**
+ * 
+ * Classe che ha lo scopo di costruire un grafo a partire dagli hashtag dei post di Instagram raccolti.
+ * Ad ogni nodo corrisponde un hashtag e a ogni arco tra due nodi la presenza di questi nello stesso post.
+ * Il peso assegnato agli archi si riferisce al numero di volte in cui i due hashtag collegati sono apparsi
+ * nello stesso post. 
+ * Il grafo viene esportato come file nel formato .gexf. (formato facilmente elaborabile tramite Gephi)
+ * 
+ * 
+ * @author Martina Protano
+ *
+ */
 public class HashtagGraphCreator {
-	static HashSet<String> fixedHashtags = new HashSet<String>(Arrays.asList(new String[] {"#coronavirus","#covid","#covid19","#covid_19","#quarantine","#quarantena",
-	"#quarantinelife","#lockdown","#lockdowndiaries","#stayhome","#socialdistance","#socialdistancing","#pandemic","#pandemic2020", "#andràtuttobene"}));
+	static HashSet<String> fixedHashtags = new HashSet<String>(Arrays.asList(new String[] {"#coronavirus","#covid","#covid19","#covid_19","#quarantine",
+	"#quarantena","#quarantinelife","#lockdown","#lockdowndiaries","#stayhome","#socialdistance","#socialdistancing","#pandemic","#pandemic2020", "#andràtuttobene"}));
 	static HashMap<String,Integer> occurrences = new HashMap<String,Integer>();
 	static HashMap<String,String> edges = new HashMap<String,String>();
 	static File dataDir = new File("C:\\Users\\marti\\git\\TirocinioProtano\\data");
-	static File graphFile = new File("C:\\Users\\marti\\git\\TirocinioProtano\\statistics\\hashtags_graph");
 	static GraphModel graphModel;
 	static UndirectedGraph undirectedGraph;
 	static Workspace workspace;
-	static int ID;
+	static int ID; // campo id per i nodi
 
 
 	/* inizializzazione progetto */
@@ -32,10 +45,6 @@ public class HashtagGraphCreator {
 		graphModel = Lookup.getDefault().lookup(GraphController.class).getGraphModel();
 		undirectedGraph = graphModel.getUndirectedGraph();
 		ID = 0;
-		
-		if(!graphFile.exists())
-			graphFile.createNewFile();
-		
 		getOccurrences(); // recupero le occorrenze degli hashtag
 	}
 	
@@ -80,10 +89,11 @@ public class HashtagGraphCreator {
 									hashtags = new JSONArray();
 									hashtags = (JSONArray) ((JSONObject)posts.get(m)).get("Hashtags");									
 									if(hashtags!= null && hashtags.size()!=0) {
-										HashSet<String> ht = new HashSet<String>();							
+										HashSet<String> ht = new HashSet<String>();	
+										HashSet<Node> nodes = new HashSet<Node>(); 
 										ht = filterHashtags(hashtags);
-										createNodes(ht);
-										addEdges(ht); // aggiunge gli archi alla struttura dati (hash map edges)
+										nodes = createNodes(ht);
+										addEdges(nodes); // aggiunge gli archi alla struttura dati (hash map edges)
 									}								
 								}
 							}
@@ -116,8 +126,16 @@ public class HashtagGraphCreator {
 				String idDest = (String) row.getCell(1).getStringCellValue();			
 				Node source = undirectedGraph.getNode(idSource);
 				Node dest = undirectedGraph.getNode(idDest);
-				Edge e = graphModel.factory().newEdge(source, dest, 1, false); // TO DO: peso degli archi!
-				undirectedGraph.addEdge(e);
+	
+				//if(source!=null && dest !=null) {
+					Edge e1 = undirectedGraph.getEdge(source, dest);
+					if(e1!=null) { // l'arco è già presente tra questi due nodi, aumento il peso
+						e1.setWeight(e1.getWeight()+1);
+					} else {
+						Edge e = graphModel.factory().newEdge(source, dest, 1, false); // TO DO: peso degli archi!					
+						undirectedGraph.addEdge(e);
+					}				
+				//}
 			} 
 		}
 		
@@ -158,8 +176,9 @@ public class HashtagGraphCreator {
 			// se l'hashtag non fa parte di quelli coinvolti nella ricerca dati
 			if(!fixedHashtags.contains((String)hashtags.get(h))) {	
 				//System.out.println("Non è contenuto in fixedHashtag: " + hashtags.get(h));
+				
 				// se occorre più di 1000 volte 
-				if(occurrences.containsKey(hashtags.get(h)) && occurrences.get(hashtags.get(h)) >= 2000) {
+				if(occurrences.containsKey(hashtags.get(h)) && occurrences.get(hashtags.get(h)) >= 500) {
 					//System.out.println("AGGIUNTO: " + hashtags.get(h));
 					ht.add((String)hashtags.get(h));
 				} //else System.out.println("Rimuovo l'hashtag: " + hashtags.get(h) + " poiché poco diffuso.");
@@ -178,39 +197,61 @@ public class HashtagGraphCreator {
 		}		
 		return false;
 	}
+	
+	
+	public static String getID(Node n) {
+		HashSet<Node> graphNodes = new HashSet<Node> (Arrays.asList(undirectedGraph.getNodes().toArray()));
+		Iterator<Node> it = graphNodes.iterator();
+
+		while(it.hasNext()) {
+			Node n1 = it.next();
+			if(n1.getLabel().equals(n.getLabel())) 
+				return (String) n1.getId();		
+		}		
+		return null;
+	}
 
 
 	/* crea i nodi del grafo basandosi sulla lista degli hashtag del post corrente */
-	public static void createNodes(HashSet<String> ht) throws IOException {
+	public static HashSet<Node> createNodes(HashSet<String> ht) throws IOException {
 		Iterator<String> it = ht.iterator();
-		HashSet<Node> nodes = new HashSet<Node> (Arrays.asList(undirectedGraph.getNodes().toArray()));
+		HashSet<Node> nodes = new HashSet<Node>(); // struttura dati che tiene i nodi associati agli hashtag del post corrente
+		HashSet<Node> graphNodes = new HashSet<Node> (Arrays.asList(undirectedGraph.getNodes().toArray()));
 		while(it.hasNext()) {
 			String hashtag = it.next();
 			Node n = graphModel.factory().newNode("n" + ID);
 			ID++;
 			n.setLabel(hashtag);
 			
-			if(!isPresent(nodes,n)) { // controllo che il grafo non contenga già il nodo con que
+			if(!isPresent(graphNodes,n)) { // controllo che il grafo non contenga già il nodo con que
 				undirectedGraph.addNode(n);	
-				System.out.println("Aggiunto nodo con etichetta: " + n.getLabel());		
+				nodes.add(n);
+				System.out.println("Aggiunto nodo con etichetta: " + n.getLabel() + " , id = " + ID);		
 			} else {
 				System.err.println("NODO GIA' PRESENTE NEL GRAFO: " + n.getLabel());
+				String id = getID(n);
+				Node n1 = graphModel.factory().newNode(id);	
+				n1.setLabel(hashtag);
+				nodes.add(n1); // aggiungo il nodo all'insieme nodes ma dopo aver recuperato e impostato il suo id originario (è già nel grafo con un certo id) 
 				ID--; // non ho inserito il nodo che ho dichiarato sopra, quindi decremento ID
 			}
 		}
 		
 		System.out.println(ht.size());
 		System.out.println("DIMENSIONE:      " + undirectedGraph.getNodes().toArray().length);
+		
+		return nodes;
 	}
 
 
 	/* crea gli archi del grafo basandosi sugli hashtag contenuti nel post */
-	public static void addEdges(HashSet<String> ht) throws IOException {	
-		HashSet<Node> nodes = new HashSet<Node> (Arrays.asList(undirectedGraph.getNodes().toArray()));
-		Iterator<Node> it1 = nodes.iterator();
+	public static void addEdges(HashSet<Node> nodes) throws IOException {	
+		//HashSet<Node> nodes1 = new HashSet<Node> (Arrays.asList(undirectedGraph.getNodes().toArray()));
+		Iterator<Node> it1 = nodes.iterator(); 
 		// scorro i nodi
 		while(it1.hasNext()) {	
 			Node n1 = it1.next();
+			//HashSet<Node> nodes2 = new HashSet<Node> (Arrays.asList(undirectedGraph.getNodes().toArray()));
 			Iterator<Node> it2 = nodes.iterator();
 			// per ogni nodo scorro la stessa lista dei nodi (ignorando quello uguale) e creo un arco
 			while(it2.hasNext()) {
@@ -227,7 +268,7 @@ public class HashtagGraphCreator {
 	/* scrive il file edge_list */
 	public static void writeEdgesOnFile() throws IOException {
 		TableFormatter formatter = new TableFormatter("edge_list", new String[]{"id source","id destination"});
-		formatter.fillTable2(edges);
+		formatter.fillTable2(undirectedGraph,edges);
 		BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(formatter.getFile()));
 		formatter.workbook.write(out); // scrivo gli archi su file
 		formatter.workbook.close();
@@ -239,7 +280,7 @@ public class HashtagGraphCreator {
 		ExportController ec = Lookup.getDefault().lookup(ExportController.class);
 		
 		try {
-			ec.exportFile(graphFile);
+			ec.exportFile(new File("C:\\Users\\marti\\git\\TirocinioProtano\\statistics\\hashtags_graph.gexf"));
 		} catch (IOException ex) {
 			ex.printStackTrace();
 			return;
@@ -253,11 +294,66 @@ public class HashtagGraphCreator {
 		ec.exportWriter(stringWriter, (CharacterExporter) exporterGraphML);
 
 	}
+	
+	
+	public static void analyze() throws IOException {
+		Percentile p = new Percentile(0.25);
+		FileInputStream f = new FileInputStream(new File("C:\\Users\\marti\\git\\TirocinioProtano\\statistics\\hashtags_table.xlsx"));
+		XSSFWorkbook workbook = new XSSFWorkbook(f);
+		XSSFSheet sheet = workbook.getSheetAt(0);
+		ArrayList<Double> values = new ArrayList<Double>();
+		double sum = 0;
+		double media = 0;
+		
+		// scorro il file per riga	
+		Iterator<Row> rowIterator = sheet.iterator();
+		while (rowIterator.hasNext()) {
+			Row row = rowIterator.next();
+
+			// salto la riga con gli header
+			if(row.getRowNum()!=0) { 
+				System.out.println(row.getRowNum());
+				//String hashtag = (String) row.getCell(1).getStringCellValue();
+				try {
+					Double occ = (Double) row.getCell(0).getNumericCellValue();
+					sum = sum + occ;
+					values.add(occ);
+				} catch(NullPointerException e) { }
+				//occurrences.put(hashtag, occ);
+				//System.err.println("L'hashtag " + hashtag + " occorre " + occ + " volte.");					
+			}
+		}
+		
+		 double[] val = new double[values.size()];
+		 for (int i = 0; i < val.length; i++) {
+		    val[i] = values.get(i).doubleValue(); 
+		 }
+		
+		
+		double res = p.evaluate(val,25);
+		media = sum/1048575;
+		
+		System.out.println("25th percentile: " + res);
+		System.out.println("50th percentile: " + p.evaluate(val,50));
+		System.out.println("75th percentile: " + p.evaluate(val,75));
+		System.out.println("Media: " + media);
+		
+		p.setQuantile(10);
+		for(int i = 10; i <=100; i+=10) {
+			System.out.println(i+"th percentile: " + p.evaluate(val,i));
+		}
+				
+		f.close();
+		workbook.close();
+		
+	}
 
 
 	public static void main(String[] args) throws IOException {
-		HashtagGraphCreator.init();
-		HashtagGraphCreator.createGraph();
-		HashtagGraphCreator.exportGraph();
+		//HashtagGraphCreator.init();
+		//HashtagGraphCreator.createGraph();
+		//HashtagGraphCreator.exportGraph();
+		
+		HashtagGraphCreator.analyze();
 	}
 }
