@@ -11,6 +11,14 @@ import org.gephi.io.exporter.spi.*;
 import org.gephi.project.api.*;
 import org.json.simple.*;
 import org.json.simple.parser.JSONParser;
+import org.gephi.statistics.plugin.*;
+import org.gephi.io.importer.api.*;
+import org.gephi.io.processor.plugin.DefaultProcessor;
+import org.gephi.data.attributes.*;
+import org.gephi.data.attributes.api.AttributeColumn;
+import org.gephi.data.attributes.api.AttributeController;
+import org.gephi.data.attributes.api.AttributeModel;
+
 
 
 /**
@@ -45,7 +53,7 @@ public class HashtagGraphCreator {
 		graphModel = Lookup.getDefault().lookup(GraphController.class).getGraphModel();
 		undirectedGraph = graphModel.getUndirectedGraph();
 		ID = 0;
-		getOccurrences(); // recupero le occorrenze degli hashtag
+		//getOccurrences(); // recupero le occorrenze degli hashtag
 	}
 	
 	
@@ -92,7 +100,9 @@ public class HashtagGraphCreator {
 										HashSet<String> ht = new HashSet<String>();	
 										HashSet<Node> nodes = new HashSet<Node>(); 
 										ht = filterHashtags(hashtags);
+										System.out.println("Hashtag filtrati. Creo i nodi...");
 										nodes = createNodes(ht);
+										System.out.println("Creati i nodi associati al post.");
 										addEdges(nodes); // aggiunge gli archi alla struttura dati (hash map edges)
 									}								
 								}
@@ -156,10 +166,14 @@ public class HashtagGraphCreator {
 
 			// salto la riga con gli header
 			if(row.getRowNum()!=0) { 
-				String hashtag = (String) row.getCell(1).getStringCellValue();
-				int occ = (int) row.getCell(0).getNumericCellValue();
-				occurrences.put(hashtag, occ);
-				System.err.println("L'hashtag " + hashtag + " occorre " + occ + " volte.");					
+				try {
+					String hashtag = (String) row.getCell(1).getStringCellValue();
+					int occ = (int) row.getCell(0).getNumericCellValue();
+					occurrences.put(hashtag, occ);
+					System.err.println("L'hashtag " + hashtag + " occorre " + occ + " volte.");		
+				} catch(NullPointerException e) {
+					System.out.println("(NullPointerException)");
+				}
 			}
 		}
 		
@@ -178,8 +192,8 @@ public class HashtagGraphCreator {
 				//System.out.println("Non è contenuto in fixedHashtag: " + hashtags.get(h));
 				
 				// se occorre più di 1000 volte 
-				if(occurrences.containsKey(hashtags.get(h)) && occurrences.get(hashtags.get(h)) >= 500) {
-					//System.out.println("AGGIUNTO: " + hashtags.get(h));
+				if(occurrences.containsKey(hashtags.get(h)) && occurrences.get(hashtags.get(h)) >= 12) {
+					System.out.println("AGGIUNTO: " + hashtags.get(h));
 					ht.add((String)hashtags.get(h));
 				} //else System.out.println("Rimuovo l'hashtag: " + hashtags.get(h) + " poiché poco diffuso.");
 			}				
@@ -347,13 +361,50 @@ public class HashtagGraphCreator {
 		workbook.close();
 		
 	}
+	
+	public static void statistics() {
+		//Import file
+		ImportController importController = Lookup.getDefault().lookup(ImportController.class);
+		Container container;
+		try {
+		 File file = new File("C:\\Users\\marti\\git\\TirocinioProtano\\statistics\\hashtags_graph.gexf");
+		 container = importController.importFile(file);
+		 container.getLoader().setEdgeDefault(EdgeDirectionDefault.UNDIRECTED); 
+		 //container.setAllowAutoNode(false); //Don’t create missing nodes
+		} catch (Exception ex) {
+		 ex.printStackTrace();
+		 return;
+		}
+		//Append imported data to GraphAPI
+		importController.process(container, new DefaultProcessor(), workspace);
+		
+		GraphDistance gd = new GraphDistance();
+		gd.setDirected(false);		
+		gd.execute(graphModel);
+		AttributeModel attributeModel = workspace.getLookup().lookup(AttributeController.class).getModel();
+
+		//Get Centrality column created
+		AttributeColumn col = attributeModel.getNodeTable().getColumn(GraphDistance.BETWEENNESS);
+		//Iterate over values
+		for (Node n : undirectedGraph.getNodes()) {
+			Object[] obj = n.getAttributes();
+			for(int j = 0; j<obj.length; j++) 
+				System.out.println(obj[j]);
+			/*
+			Element el = n.getAttribute(col);
+			Double centrality = 
+			System.out.println(centrality); */
+		}
+		
+	}
 
 
 	public static void main(String[] args) throws IOException {
-		//HashtagGraphCreator.init();
+		HashtagGraphCreator.init();
 		//HashtagGraphCreator.createGraph();
 		//HashtagGraphCreator.exportGraph();
 		
-		HashtagGraphCreator.analyze();
+		//HashtagGraphCreator.analyze();
+		HashtagGraphCreator.statistics();
 	}
 }

@@ -34,7 +34,7 @@ public class TableFormatter {
 		for(String key: map1.keySet()) {
 			try {
 				int val  = ((Integer)map1.get(key)).intValue();
-				val = (int)Math.log(val);
+				//val = (int)Math.log(val);
 				//if(val>=100) {
 					Row row = sheet.createRow(i); // creo una riga
 					Cell cell1 = row.createCell(0); // prima cella della riga appena creata	
@@ -96,6 +96,33 @@ public class TableFormatter {
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
+	}
+
+
+	public void fillTable3(HashMap<Integer, Integer> frequences) {
+		int i = 1;
+		System.out.println("Riempio la tabella excel");
+		for(Integer val: frequences.keySet()) {
+			try {
+				int freq  = ((Integer)frequences.get(val)).intValue();
+				//if(val>=100) {
+					Row row = sheet.createRow(i); // creo una riga
+					Cell cell1 = row.createCell(0); // prima cella della riga appena creata	
+					cell1.setCellValue(val);
+					
+					cell1 = row.createCell(1);
+					cell1.setCellValue(freq);
+		
+					System.out.println("Ho inserito il record: " + "VALORE " + val + ", " + "FREQUENZA: " + freq);
+					i++;
+				//}
+			} catch(IllegalArgumentException e) {
+				break;
+			}
+		}
+		
+		writeTable();	
+		
 	}
 	
 }

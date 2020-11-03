@@ -2,6 +2,10 @@ import java.io.*;
 import java.nio.file.*;
 import java.sql.Timestamp;
 import java.util.*;
+
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.json.simple.*;
 import org.json.simple.parser.*;
 
@@ -43,23 +47,116 @@ public class DataElaborator {
 		sw = setStopwords();
 	}
 
+	
+	@SuppressWarnings("deprecation")
+	public void count() throws IOException {
+		HashSet<Long> id = new HashSet<Long>();
+		HashMap<String,Integer> ownerOccurrences = new HashMap<String,Integer>();
+		long max = 1598423895, min = 1598423895;
+		int c = 0;
+		String name = null;
+		int num = 0; 
+		String[] set = new String[1063];
+		String [] date = new String[1063];
+		int r = 0;
+		
+		if(data.isDirectory()) {
+			File[] directories = data.listFiles();
 
-	public static void deleteCopies(File data) throws IOException, ParseException {
-		FileReader fr = new FileReader(data);
-		JSONParser parser = new JSONParser();
-		JSONArray posts = (JSONArray) parser.parse(fr);
-		int length = posts.size();
+			/* scorre le cartelle con date (giorno-mese-anno) */
+			for(int i=0; i < directories.length; i++) {
+				System.out.println("Entro nella cartella: " + directories[i].getName());
 
-		System.out.println("Dimensione pre-filtraggio: " + length);
+				if(directories[i].isDirectory()) {
+					File[] f = directories[i].listFiles();
 
-		Set<String> set = new HashSet<String>();
-		for(int i = 0; i < length; i++){
-			set.add(((JSONObject)posts.get(i)).toJSONString());
+					/* scorro le cartelle degli hashtag*/
+					for(int k=0; k < f.length; k++) {
+						System.out.println("Entro nella cartella: " + f[k].getName());
+
+						File[] files = f[k].listFiles();					
+						/* scorro i singoli file */
+						for(int j=0; j<files.length; j++) {
+							if(!files[j].getName().contains("filtered")) {
+								Reader reader = null;
+								JSONArray posts = null;
+								try {
+									reader = new BufferedReader(new InputStreamReader(new FileInputStream(files[j]), "utf-8"));
+									JSONParser parser = new JSONParser();
+									posts = (JSONArray) parser.parse(reader);	
+								} catch (Exception ex) {
+									ex.printStackTrace();
+								}
+								
+								
+								for(int p=0; p<posts.size(); p++) {
+									JSONObject post = (JSONObject) posts.get(p);
+									String owner = (String) ((JSONObject)((JSONObject)((JSONObject)post.get("graphql")).get("shortcode_media")).get("owner")).get("username");
+									JSONObject temp = (JSONObject) (((JSONObject)post.get("graphql"))).get("shortcode_media");
+									String id1 = null; 
+									if(temp.containsKey("id")) {
+										id1 = (String) ((JSONObject)((JSONObject)( (JSONObject)post.get("graphql"))).get("shortcode_media")).get("id");
+										Long id2 = Long.parseLong(id1);
+										if(!id.contains(id2)) {
+											if(ownerOccurrences.containsKey(owner)) {
+												ownerOccurrences.put(owner, new Integer(ownerOccurrences.get(owner)+1)) ;
+											} 
+											else ownerOccurrences.put(owner, new Integer(1));
+										}
+										
+										id.add(id2);
+									}
+									long timestamp = (long) ((JSONObject)((JSONObject)((JSONObject)post.get("graphql"))).get("shortcode_media")).get("taken_at_timestamp");	 
+									Timestamp t = new Timestamp(timestamp*1000);
+									Date d = new Date(t.getTime());
+									//System.out.println(d.toString());
+									
+									if(!d.toString().contains("2020") && !d.toString().contains("2019")) {
+										name = files[j].getName();
+										set[r] = name;
+										date[r] = d.toString();
+										r++;
+										c++;
+									} else {
+											//System.out.println(d);
+										if(timestamp < min) min = timestamp;
+										if(max < timestamp) max = timestamp;	
+											
+										//} else c++;
+									
+									} 
+							
+							}
+							
+						}
+					}
+				}
+			}
 		}
-
-		System.out.println("Dimensione dopo il filtraggio: " + set.size());
+		}
+		
+		Timestamp tmax = new Timestamp(max*1000);
+		Timestamp tmin = new Timestamp(min*1000);
+		Date datemax = new Date(tmax.getTime());
+		Date datemin = new Date(tmin.getTime());
+		
+		/*	
+		HashMap<String,Integer> map3 = (HashMap<String, Integer>) HashMapSorting.sortByValue(ownerOccurrences);
+		TableFormatter formatter3 = new TableFormatter("users", new String[] {"posts", "username"});
+		formatter3.fillTable1(map3); */
+		
+		System.out.println("DATA MINIMA: " + datemin);
+		System.out.println("DATA MASSIMA: " + datemax);
+		System.out.println("Numero post: " + id.size());
+		System.out.println("Esclusi: " + c);
+		for(int w=0; w<set.length;w++) {
+			System.out.println(set[w]);
+			System.out.println(date[w]);
+			System.out.println();
+		}
+		
 	}
-
+	
 
 	@SuppressWarnings("unchecked")
 	public static void filterInformations(File f) throws IOException {
@@ -196,33 +293,21 @@ public class DataElaborator {
 												else tokenOccurrences.put(s, new Integer(1));
 											}
 										}
-
-
-										/*
-										Lemmatizer lemmatizer = new Lemmatizer();
-										lemmatizer.lemmatize(tokenOccurrences,captionText);
-										 */
-
-
 									}
 
-									if(location!=null) { /*
-										if(location.contains("India")) {
-											if(locationOccurrences.containsKey("India")) {
-												locationOccurrences.put("India", new Integer(locationOccurrences.get("India")+1)) ;
-											} 
-											else locationOccurrences.put("India", new Integer(1));	
+									if(location!=null) { 
+										
+										if(location.contains(",")) {
+											if(location.contains(" ")) location = location.replace(" ", "");
+											String[] s = location.split(",");
+											location = s[s.length-1];
 										}
-										else if(location.contains("Italy") || location.contains("Italia")) {
-											if(locationOccurrences.containsKey("Italy")) {
-												locationOccurrences.put("Italy", new Integer(locationOccurrences.get("Italy")+1)) ;
-											} 
-											else locationOccurrences.put("Italy", new Integer(1));	
-										} else { */
-										if(locationOccurrences.containsKey(location)) {
-											locationOccurrences.put(location, new Integer(locationOccurrences.get(location)+1));
-										} else locationOccurrences.put(location, new Integer(1));
-										//}
+										
+										if(location.matches("\\A\\p{ASCII}*\\z")) {
+											if(locationOccurrences.containsKey(location)) {
+												locationOccurrences.put(location, new Integer(locationOccurrences.get(location)+1));
+											} else locationOccurrences.put(location, new Integer(1));
+										}
 									}
 
 									if(hashtags!=null) {
@@ -310,7 +395,7 @@ public class DataElaborator {
 		TableFormatter formatter4 = new TableFormatter("token", new String[] {"occurrences", "token"});
 		formatter4.fillTable1(map4);
 	}
-	
+
 	
 	public boolean isNumber(String s) {
 		if(s.equals("2020")) return false;
@@ -334,56 +419,6 @@ public class DataElaborator {
 	}
 
 
-	public void lemmatizazion() {
-		Lemmatizer lemmatizer = new Lemmatizer();
-
-		if(data.isDirectory()) {
-			File[] directories = data.listFiles();
-
-			/* scorre le cartelle con date (giorno-mese-anno) */
-			for(int i=0; i < directories.length; i++) {
-				System.out.println("Entro nella cartella: " + directories[i].getName());
-
-				if(directories[i].isDirectory()) {
-					File[] f = directories[i].listFiles();
-
-					/* scorro le cartelle degli hashtag*/
-					for(int k=0; k < f.length; k++) {
-						System.out.println("Entro nella cartella: " + f[k].getName());
-
-						File[] files = f[k].listFiles();					
-						/* scorro i singoli file */
-						for(int j=0; j<files.length; j++) {
-
-							/* considero solo i file filtrati */
-							if(files[j].getName().contains("filtered")) {
-								/* parso il file */
-								Reader reader = null;
-								JSONArray posts = null;
-								try {
-									reader = new BufferedReader(new InputStreamReader(new FileInputStream(files[j]), "utf-8"));
-									JSONParser parser = new JSONParser();
-									posts = (JSONArray) parser.parse(reader);	
-								} catch (Exception ex) {
-									ex.printStackTrace();
-								}
-
-								for(int m=0; m<posts.size(); m++) {
-									String captionText = (String) ((JSONObject)posts.get(m)).get("CaptionText");
-
-									if(captionText!=null) {
-										//lemmatizer.lemmatize(captionText);
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-
-
 	public static Stopwords setStopwords() throws FileNotFoundException, IOException {
 		Stopwords sw = new Stopwords();
 		sw.add("."); sw.add(":"); sw.add("("); sw.add(")"); sw.add("-"); sw.add("?"); sw.add(",");
@@ -402,7 +437,87 @@ public class DataElaborator {
 
 		return sw;
 	}
+	
+	
+	public void getHashtagsFrequences() throws IOException {
+		FileInputStream f = new FileInputStream(new File("C:\\Users\\marti\\git\\TirocinioProtano\\statistics\\hashtags_table.xlsx"));
+		HashMap<Integer,Integer> frequences = new HashMap<Integer,Integer>();
+		XSSFWorkbook workbook = new XSSFWorkbook(f);
+		XSSFSheet sheet = workbook.getSheetAt(0);
+		int count = 0;
+		int refValue = -1;
+		
+		// scorro il file per riga	
+		Iterator<Row> rowIterator = sheet.iterator();
+		while (rowIterator.hasNext()) {
+			Row row = rowIterator.next();
+			
+			// salto la riga con gli header
+			if(row.getRowNum()!=0 && row.getRowNum()<1048576) { 
+				System.out.println("RIGA: " + row.getRowNum());				
+				int corrValue = (int) row.getCell(0).getNumericCellValue(); // valore corrente di occorrenza che leggo
+				if(row.getRowNum()==2)
+					refValue = corrValue; // sto scorrendo gli hashtags con occorrenza pari a refValue
+				
+				/* se il valore è cambiato */
+				if(corrValue != refValue) {
+					frequences.put(refValue, count);
+					refValue = corrValue;
+					count = 1;
+				} else count++;	
+				
+				if(row.getRowNum()==1048575) {
+					frequences.put(corrValue, count);
+				}
+			}
+		}
+		
+		HashMap<Integer, Integer> map = (HashMap<Integer, Integer>) HashMapSorting.sortByValue1(frequences);
+		TableFormatter formatter = new TableFormatter("hashtag_distribution",new String[]{"value","occurrences"});
+		formatter.fillTable3(map);
+	}
 
+	
+	public void getUsersFrequences() throws IOException {
+		FileInputStream f = new FileInputStream(new File("C:\\Users\\marti\\git\\TirocinioProtano\\statistics\\users_table.xlsx"));
+		HashMap<Integer,Integer> frequences = new HashMap<Integer,Integer>();
+		XSSFWorkbook workbook = new XSSFWorkbook(f);
+		XSSFSheet sheet = workbook.getSheetAt(0);
+		int count = 0;
+		int refValue = -1;
+		
+		// scorro il file per riga	
+		Iterator<Row> rowIterator = sheet.iterator();
+		while (rowIterator.hasNext()) {
+			Row row = rowIterator.next();
+			
+			// salto la riga con gli header
+			if(row.getRowNum()!=0) { 
+								
+				int corrValue = (int) row.getCell(0).getNumericCellValue(); // valore corrente del numero di post dell'utente
+				System.out.println("RIGA: " + row.getRowNum() + " VALORE: " + corrValue);
+				if(row.getRowNum()==2)
+					refValue = corrValue; // sto scorrendo gli hashtags con occorrenza pari a refValue
+				
+				/* se il valore è cambiato */
+				if(corrValue != refValue) {
+					frequences.put(refValue, count);
+					refValue = corrValue;
+					count = 1;
+				} else count++;	
+				
+				if(row.getRowNum()==328108) {
+					frequences.put(corrValue, count);
+				}
+
+			}
+		}
+		
+		HashMap<Integer, Integer> map = (HashMap<Integer, Integer>) HashMapSorting.sortByValue1(frequences);
+		TableFormatter formatter = new TableFormatter("users_distribution",new String[]{"value","occurrences"});
+		formatter.fillTable3(map);
+	}
+	
 
 	public static String[] getHashtagsStatistics() {
 		String[] stat = new String[3]; // 0 = min, 1 = media, 2 = max
@@ -769,10 +884,12 @@ public class DataElaborator {
 		DataElaborator elab = new DataElaborator();
 
 		//elab.elaborate();
-		elab.countOccurrences(); // statistiche su luoghi e hashtags
-
+		//elab.countOccurrences(); // statistiche su luoghi e hashtags
+		//elab.getHashtagsFrequences();
+		//elab.getUsersFrequences();
 		//elab.lemmatizazion();
 
+		elab.count();
 		//elab.getAccessibilityCaptions();
 	}	
 }
