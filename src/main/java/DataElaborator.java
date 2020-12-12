@@ -109,7 +109,6 @@ public class DataElaborator {
 									long timestamp = (long) ((JSONObject)((JSONObject)((JSONObject)post.get("graphql"))).get("shortcode_media")).get("taken_at_timestamp");	 
 									Timestamp t = new Timestamp(timestamp*1000);
 									Date d = new Date(t.getTime());
-									//System.out.println(d.toString());
 									
 									if(!d.toString().contains("2020") && !d.toString().contains("2019")) {
 										name = files[j].getName();
@@ -118,12 +117,8 @@ public class DataElaborator {
 										r++;
 										c++;
 									} else {
-											//System.out.println(d);
 										if(timestamp < min) min = timestamp;
 										if(max < timestamp) max = timestamp;	
-											
-										//} else c++;
-									
 									} 
 							
 							}
@@ -274,7 +269,6 @@ public class DataElaborator {
 									String captionText = (String) ((JSONObject)posts.get(m)).get("CaptionText");
 
 									if(captionText!=null) {
-
 										StringTokenizer tokenizer = new StringTokenizer(captionText);
 										while(tokenizer.hasMoreTokens()) {
 											String s = tokenizer.nextToken();
@@ -381,8 +375,11 @@ public class DataElaborator {
 
 		writer3.write("OWNER STATISTICS:\r\n");
 		writer3.append("\r\n");
+		
+		
 		HashMap<String,Integer> map3 = (HashMap<String, Integer>) HashMapSorting.sortByValue(ownerOccurrences);
 		TableFormatter formatter3 = new TableFormatter("users", new String[] {"posts", "username"});
+		writer3.append("Number of users: " + map3.keySet().size() + "\r\n");
 		formatter3.fillTable1(map3);
 		for (String owner: map3.keySet()){
 			String key = owner.toString();
@@ -519,11 +516,13 @@ public class DataElaborator {
 	}
 	
 
-	public static String[] getHashtagsStatistics() {
+	public String[] getHashtagsStatistics() {
 		String[] stat = new String[3]; // 0 = min, 1 = media, 2 = max
 		int min = 100, max = 0;
 		float media = 0;
-		int numOfPost = 0, numOfHashtags = 0;
+		int numOfPost = 0, numOfHashtags = 0, outOfLimit = 0;
+		int totLikes = 0, totComm = 0;
+		float avgLikes = 0, avgComm = 0, maxLike = 0;
 
 		if(data.isDirectory()) {
 			File[] directories = data.listFiles();
@@ -556,34 +555,62 @@ public class DataElaborator {
 									ex.printStackTrace();
 								}
 
+								
+								numOfPost = numOfPost + posts.size();
 								/* scorro i singoli post */
 								for(int m=0; m<posts.size(); m++) {
-									numOfPost++;
+									//numOfPost++;
 									JSONArray hashtags = (JSONArray) ((JSONObject)posts.get(m)).get("Hashtags");
+									Long likes = (Long) ((JSONObject)posts.get(m)).get("NumberOfLikes");
+									Long comments = (Long) ((JSONObject)posts.get(m)).get("NumberOfComments");
+									
+									if(likes.intValue() > maxLike) {
+										System.out.println(likes.intValue() + " " + maxLike);
+										maxLike = likes.intValue();
+										String owner = (String) ((JSONObject)posts.get(m)).get("Owner");
+										System.out.println(owner + " " + maxLike);
+										System.out.println(files[j].getName() + " " + m);
+									}
+									
+									totLikes = totLikes + likes.intValue();
+									totComm = totComm + comments.intValue();
+									
+									
 									if(hashtags!= null && hashtags.size()!=0) {
 										hashtags = filterHashtags(hashtags);
 										int size = hashtags.size();
+										if(size>40) {
+											outOfLimit++;
+										}
 										numOfHashtags = numOfHashtags + size;
 										if(size<min)
 											min = size;
 										if(size>max)
 											max = size;
-									}
+									}							
 								}
-
-								media = numOfHashtags/numOfPost;
-								stat[0] = min + "";
-								stat[1] = media + "";
-								stat[2] = max + "";
 							}
-
 						}
-
 					}
 				}
 			}
 		}
-
+		
+		media = numOfHashtags/numOfPost;
+		stat[0] = min + "";
+		stat[1] = media + "";
+		stat[2] = max + "";
+		
+		System.out.println("Num. min di hashtag in un post: " + stat[0]);
+		System.out.println("Num. medio di hashtag in un post: " + stat[1]);
+		System.out.println("Num. max di hashtag in un post: " + stat[2]);
+		System.out.println(outOfLimit); // numero di post che hanno più hashtag del massimo consentito
+		
+		avgLikes = totLikes/numOfPost;
+		avgComm = totComm/numOfPost;
+		System.out.println("Media like: " + avgLikes);
+		System.out.println("Media commenti: " + avgComm);
+		
 		return stat;
 	}
 
@@ -615,20 +642,19 @@ public class DataElaborator {
 							parsable = true; 
 
 							if(!files[j].getName().contains("filtered")) {
-								filterInformations(files[j]);
+								//filterInformations(files[j]);
 								numOfFile++;
-							}
+								
+								int pars = isParsable(files[j]);
+								if(pars == -1) {
+									notParsable ++;
+									parsable = false;
+								}
 
-							int pars = isParsable(files[j]);
-							if(pars == -1) {
-								notParsable ++;
-								parsable = false;
-							}
-
-							if(parsable)
-								numOfPost = numOfPost + pars;
+								if(parsable)
+									numOfPost = numOfPost + pars;
+							}							
 						}
-
 					}
 				}
 			}
@@ -665,7 +691,7 @@ public class DataElaborator {
 						hashtags.add(hashtag);
 					System.out.println("Ho aggiunto " + hashtag);
 				}
-
+				
 				i++;
 			}			
 			return hashtags;
@@ -734,7 +760,6 @@ public class DataElaborator {
 													if(s1[s1.length-1].contains(".")) {													
 														int index = s1[s1.length-1].indexOf(".");														
 														s1[s1.length-1] = s1[s1.length-1].substring(0,index);
-														//System.out.println(s1[s1.length-1]);
 													}
 
 													if(s1[s1.length-1].contains(" and ")) {
@@ -758,7 +783,6 @@ public class DataElaborator {
 														else words.put(s1[a], new Integer(1));	
 													}																																																																		
 												} 
-
 											} 
 										}
 
@@ -787,15 +811,10 @@ public class DataElaborator {
 										if(caption.contains("indoor"))
 											in++;										
 										if(caption.contains("outdoor"))
-											out++;
-
-										//captions.add(caption);									
+											out++;								
 									} 
 								}
-
-
 							}
-
 						}
 					}
 				}
@@ -841,13 +860,11 @@ public class DataElaborator {
 			try {
 				writer.append(c + "\r\n");
 				writer.flush();
-				//System.out.println(c);
 			} catch(Exception e) {
 				e.printStackTrace();
 			}
 		} 
 	}
-
 
 
 	public static int isParsable(File f) throws IOException {
@@ -884,12 +901,13 @@ public class DataElaborator {
 		DataElaborator elab = new DataElaborator();
 
 		//elab.elaborate();
+		elab.getHashtagsStatistics();
 		//elab.countOccurrences(); // statistiche su luoghi e hashtags
 		//elab.getHashtagsFrequences();
 		//elab.getUsersFrequences();
 		//elab.lemmatizazion();
 
-		elab.count();
+		//elab.count();
 		//elab.getAccessibilityCaptions();
 	}	
 }
